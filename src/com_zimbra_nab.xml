@@ -1,4 +1,4 @@
-<zimlet name="com_zimbra_addressbookmanager" version="1.0" description="Zimbra Address Book Manager">
+<zimlet name="com_zimbra_nab" version="1.0" description="Zimbra Address Book Manager">
      <contentObject>
          <matchOn>
              <regex attrs="ig"> user|person</regex> <!-- matches on the words user or person -->
