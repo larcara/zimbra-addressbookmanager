@@ -24,74 +24,70 @@ _.escape = function(string) {
 };
 
 
-
-function setAuthToken(data,status,xhr){
-        console.log(data);
-        authToken=data.Body.AuthResponse.authToken[0]._content;     
-}
-
-
-
-function setContacts(data,status,xhr){
-   $.each( data.Body.SearchResponse.cn, function( index,obj ) {
-    obj._attrs.type=="group" ? groups.push(obj) : contacts.push(obj);
-    });
-  //contacts += $.map( data.Body.SearchResponse.cn, function( obj ) {
-  //  return obj._attrs.type=="group" ? null: obj;
-  //  });
-  // popolateGroups();
-  // console.log(data); 
-}
-
 function walk_folder(obj){
     //console.log ("walkin on " + JSON.stringify(obj));
- if (typeof obj.folder =='object' ){
-    return [obj, walk_folder(obj.folder[0])]
- }
- else
- {
-    return obj
- }
-}
-
-function setFolders(data,status,xhr){
-    var response=data.Body.GetFolderResponse.folder[0];
-    var folders=$.map( response.folder, function(n){
-        return walk_folder(n);
-    });
-    var link=response.link;
-    address_books=$.map( folders, function( obj ) {
-    return obj.view=="contact" ? obj : null;
-    });
- 
-   popolateAddressBooks();
-   console.log(data); 
-   
+	if (typeof obj.folder =='object' )
+		{return [obj, walk_folder(obj.folder[0])]}
+	else
+		{return obj}
 }
 
 
-function getAuth(host,user, password, callback){
-	hostName=host;
-    $.post(hostName + "/service/soap/AuthRequest",'{"Header":{"context":{"_jsns":"urn:zimbra","format":{"type":"js"},"nosession":{}}},"Body":{"AuthRequest":{"_jsns":"urn:zimbraAccount","account":{"_content":"' + user + '","by":"name"},"password":{"_content":"' + password + '"},"prefs":{},"attrs":{}}}}',function(data,status,xhr){ setAuthToken(data,status,xhr);callback()}, "json");
-};
-
-function getGroups(address_book, parent_element){
-    groups=[]
-    contacts=[]
-    $.post(hostName + "/service/soap/SearchRequest",
-        '{"Header":{"context":{"_jsns":"urn:zimbra","authToken":"'+ authToken +'"}},"Body":{"SearchRequest":{"_jsns":"urn:zimbraMail","sortBy":"nameAsc","tz":{"id":"Europe/Berlin"},"locale":{"_content":"en_US"},"offset":0,"limit":100,"query":"in:\\"'+ address_book +'\\"","types":"contact","fetch":1}}}',
-         function(data,status,xhr){ setContacts(data,status,xhr); popolateGroups(parent_element);},
-          "json")
-    //if data.size == limit >> getGroup altri 100
-};
-function getFolders(){
-      var header='{"Header":{"context":{"_jsns":"urn:zimbra","authToken":"'+ authToken +'"}}';
+var zimbraClient= {
+	authToken: jQuery.query.get('authToken'),
+	hostName: jQuery.query.get('hostName'),
+	addressBooks:[],
+	isConnected: function() {return !this.authToken=="";},
+	user:"",
+	password:"",
+	getAuth:function(){
+		if (this.isConnected()) return true;
+		data=$.post(this.hostName + "/service/soap/AuthRequest",
+				'{"Header":{"context":{"_jsns":"urn:zimbra","format":{"type":"js"},"nosession":{}}},"Body":{"AuthRequest":{"_jsns":"urn:zimbraAccount","account":{"_content":"' + this.user + '","by":"name"},"password":{"_content":"' + this.password + '"},"prefs":{},"attrs":{}}}}',
+				function(data){
+					zimbraClient.authToken=data.Body.AuthResponse.authToken[0]._content; 
+					var new_query="" + jQuery.query.set("authToken", zimbraClient.authToken).set("hostName", zimbraClient.hostName);
+					window.location.search =  new_query;
+				},
+				"json");
+		
+	},
+	getAddressBooks:function(){
+      var header='{"Header":{"context":{"_jsns":"urn:zimbra","authToken":"'+ this.authToken +'"}}';
       var body='"Body":{"GetFolderRequest":{"_jsns":"urn:zimbraMail","visible":"0"}}}';
-      $.post(hostName + "/service/soap/GetFolderRequest", header + "," + body, 
-                function(data,status,xhr){ setFolders(data,status,xhr)}, "json")
+      $.when($.post(this.hostName + "/service/soap/GetFolderRequest", header + "," + body, 
+                function(data){ 
+					//console.log(data.Body.GetFolderResponse.folder[0].folder);
+					var local_folders = $.map(data.Body.GetFolderResponse.folder[0].folder, function(n){return walk_folder(n);});
+					//console.log(local_folders);
+					var delegated_folders = data.Body.GetFolderResponse.link && $.map(data.Body.GetFolderResponse.link[0], function(n){return walk_folder(n);});
+					//console.log(delegated_folders);
+					zimbraClient.addressBooks = $.map( local_folders, function( obj ) {return obj.view=="contact" ? obj : null;});
+					$.each(zimbraClient.addressBooks, function(index, value){zimbraClient.getAddressBook(value)})
+				}, "json")).then(function(){console.log("done")})
+	},
+	getAddressBook: function(addressBook){
+		//console.log(addressBook );
+		//console.log("get groups and contacts for ..");
+		groups=[]
+        contacts=[]
+		var header='"Header":{"context":{"_jsns":"urn:zimbra","authToken":"'+ this.authToken +'"}}';
+        var body='"Body":{"SearchRequest":{"_jsns":"urn:zimbraMail","offset":0,"limit":100,"query":"in:\\"'+ addressBook.absFolderPath.substring(1) +'\\"","types":"contact","fetch":1}}'
+		
+		$.post(this.hostName + "/service/soap/SearchRequest", "{" + header + "," + body + "}",
+					function(data){
+					   console.log(addressBook);
+					   addressBook.groups =  addressBook.groups || []
+					   addressBook.contacts =  addressBook.contacts || []
+					   $.each( data.Body.SearchResponse.cn, function( index,obj ) {obj._attrs.type=="group" ? addressBook.groups.push(obj) : addressBook.contacts.push(obj);})
+			},"json")
+		return true;
     //if data.size == limit >> getGroup altri 100
-};
+	
+	}
 
+	
+}
 
 function setGroups(id, dlist){
     data='{"Header":{"context":{"_jsns":"urn:zimbra","authToken":"'+ authToken +'"}},"Body":{"ModifyContactRequest":{"_jsns":"urn:zimbraMail","replace":"0","force":"1","cn":{"id":"' + id + '","a":[{"n":"dlist","_content":"' + dlist  + '"}]}}}}'
@@ -128,21 +124,25 @@ function popolateGroups(parent_element){
 }
 
 function popolateAddressBooks(){
+	console.log(zimbraClient.addressBooks);
     var group_div=$(".address_books_ul")
     group_div.empty();
-    $.each(address_books,function(index, value){
-        group_div.append(generateUlForAddressBook(value));
-        //$('<li/>', {'id': 'address_book_li_' + value.id, 'class':'list-group-item address_book_li', 'text': value.name, 'data-id':value.id , 'data-targetid': 'address_book_ul_' + value.id , 'data-folderpath': value.absFolderPath}));
-        //group_div.append($('<ul/>', {'class':'list-group list-group-collapse', 'id': 'address_book_ul_' + value.id}));
-
+    $.each(zimbraClient.addressBooks,function(index, value){
+		console.log(value);
+		var addressBook_ul=generateUlForAddressBook(value);
+        group_div.append(addressBook_ul);
+		$.each(value.groups,function(index, value){
+			var group_li=generateLIForGroup(value);
+			addressBook_ul.append(group_li);
+		})
     })
     $('label.tree-toggler').click(function () {
         //$(this).parent().children('ul.tree').toggle(300);
       });
 
     $(".address_book_li").click(function(){
-        getGroups($(this).data("folderpath").substring(1), $(this));
-        $(this).children('ul.tree').toggle(300);
+        //getGroups($(this).data("folderpath").substring(1), $(this));
+//        $(this).children('ul.tree').toggle(300);
     });
     
 }
@@ -153,14 +153,37 @@ function saveGroups(id,dlist){
 
 //////////////
 function generateUlForAddressBook(address_book){
-
   var li=$('<li/>', 
         { 'id': 'address_book_li_' + address_book.id, 
-          'class':' address_book_li',
+          'class':' list-group-item list-group-item-success ',
           'data-id':address_book.id , 'data-targetid': 'address_book_ul_' + address_book.id , 
           'data-folderpath': address_book.absFolderPath
         }
         ).append($('<label/>', {'class':' tree-toggler nav-header',  'text': address_book.name})
         ).append($('<ul/>', {'class':'nav nav-list tree', 'id': 'address_book_ul_' + address_book.id}));
+  return li;
+}
+function generateLIForGroup(group){
+	console.log(group);
+    var li = $('<li/>', {
+			'id': group.id,
+			'class':' list-group-item list-group-item-info li_group', 
+			'text': group.fileAsStr,
+			'data-id':group.id ,
+			'data-groupname': group.fileAsStr, 
+			'data-dlist':group._attrs.dlist}
+		);
+    li.click(function(){
+        //console.log($(this).data("dlist"));
+        var emails=$(this).data("dlist").split(",");
+        var group_label=$("#label_group_name")
+        var table=$('#contacts_table').DataTable();
+        table.clear();
+        $.each(emails, function(index,value){table.row.add([null,$('<label/>',{'data-originalvalue':value, 'text':value})[0].outerHTML,null])});
+        table.draw();
+        group_label.data("id", $(this).data("id"));
+        group_label.empty()
+        group_label.append($(this).data("groupname"));
+    })
   return li;
 }
