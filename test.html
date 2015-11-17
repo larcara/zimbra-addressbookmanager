@@ -133,9 +133,9 @@
 
     $(".login").click(function(){
         zimbraClient.hostName=$("#server").val();
-		zimbraClient.user=$("#loginEmail").val();
-		zimbraClient.password=$("#loginPassword").val();
-		zimbraClient.getAuth(); // ,, getFolders);
+		    zimbraClient.user=$("#loginEmail").val();
+	     	zimbraClient.password=$("#loginPassword").val();
+		    zimbraClient.getAuth(); // ,, getFolders);
         $(".search_box").show();
         $(".login_box").hide();
       });    
@@ -147,7 +147,7 @@
         var table=$('#contacts_table').DataTable();
         console.log("values:" +  $.map(table.data(),function(value){
           var email=$(value[1]);
-          return email.data("originalvalue")
+          return email.text(); //data("originalvalue")
         }));
           //saveGroups($("#label_group_name").data("id"),$("#group_elements").val());
       });    

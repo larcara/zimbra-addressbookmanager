@@ -104,8 +104,8 @@ function popolateGroups(parent_element){
     })
     
     $(".li_group").click(function(){
-        //console.log($(this).data("dlist"));
-        var emails=$(this).data("dlist").split(",");
+        console.log($(this).data("dlist"));
+        var emails=$(this).data("dlist").split(/((?:\"[^\"]*\" )?<?[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}>?)/);
         var group_label=$("#label_group_name")
         var table=$('#contacts_table').DataTable();
         table.clear();
@@ -124,7 +124,7 @@ function popolateGroups(parent_element){
 }
 
 function popolateAddressBooks(){
-	console.log(zimbraClient.addressBooks);
+	   //console.log(zimbraClient.addressBooks);
     var group_div=$(".address_books_ul")
     group_div.empty();
     $.each(zimbraClient.addressBooks,function(index, value){
@@ -175,15 +175,28 @@ function generateLIForGroup(group){
 		);
     li.click(function(){
         //console.log($(this).data("dlist"));
-        var emails=$(this).data("dlist").split(",");
+        var emails=$(this).data("dlist").split(/((?:\"[^\"]*\" )?<?[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}>?)/);
         var group_label=$("#label_group_name")
         var table=$('#contacts_table').DataTable();
         table.clear();
-        $.each(emails, function(index,value){table.row.add([null,$('<label/>',{'data-originalvalue':value, 'text':value})[0].outerHTML,null])});
+        $.each(emails, function(index,value){
+            if (value.indexOf("@") > 0)
+              table.row.add([null,$('<label/>',{class:'table-cell', 'data-originalvalue':value, 'text':value})[0].outerHTML,null])
+          });
         table.draw();
         group_label.data("id", $(this).data("id"));
         group_label.empty()
         group_label.append($(this).data("groupname"));
+        $(".table-cell").click(function(){
+                var newvalue=prompt("Modifica Email", $(this).text());
+                console.log (newvalue);
+                if (newvalue != "")
+                  {
+                    //$(this).empty();
+                    $(this).text(newvalue);
+
+                  }
+              })
     })
   return li;
 }
