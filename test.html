@@ -81,9 +81,9 @@
 				  <table id="contacts_table" class="table table-hover table-condensed">
 					<thead>
 						<tr>
-							<th>Contact</th>
+							<th>Contact Name</th>
 							<th>Email</th>
-							<th>Actions</th>
+							<th>Original Value</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -126,6 +126,7 @@
 <script type="text/javascript" src="https://cdn.datatables.net/scroller/1.3.0/js/dataTables.scroller.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/select/1.0.1/js/dataTables.select.js"></script>
 <script type="text/javascript" src="js/jquery.query-object.js"></script>
+<script type="text/javascript" src="js/jquery.jeditable.js"></script>
     <script src="./js.cookie.js"></script>
     <script src="./zimbraClient.js"></script>
 
@@ -133,26 +134,24 @@
 
     $(".login").click(function(){
         zimbraClient.hostName=$("#server").val();
-		    zimbraClient.user=$("#loginEmail").val();
-	     	zimbraClient.password=$("#loginPassword").val();
-		    zimbraClient.getAuth(); // ,, getFolders);
+		zimbraClient.user=$("#loginEmail").val();
+	    zimbraClient.password=$("#loginPassword").val();
+		$.when(zimbraClient.getAuth()).then(alert("auth ok")); // ,, getFolders);
         $(".search_box").show();
         $(".login_box").hide();
       });    
     $("#reload_groups").click(function(){
         var addressBooks = zimbraClient.getAddressBooks();
-
-				$.when(addressBooks).done(function(){popolateAddressBooks()})
-				});
+		$.when(addressBooks).then(popolateAddressBooks())
+		});
             
     $(".saveGroups").click(function(){
         console.log("start sving group of:" + $("#label_group_name").data("id"));
         var table=$('#contacts_table').DataTable();
-        console.log("values:" +  $.map(table.data(),function(value){
-          var email=$(value[1]);
-          return email.text(); //data("originalvalue")
-        }));
-          //saveGroups($("#label_group_name").data("id"),$("#group_elements").val());
+        var new_dlist=$.map(table.data(),function(value){return value["contact"] + " <" + value["email"] + ">"});
+        
+        console.log("values:" +   new_dlist );
+        zimbraClient.saveGroups($("#label_group_name").data("id"),new_dlist);
       });    
         
     $(document).ready(function() {
@@ -168,11 +167,16 @@
 		 $(".search_box").hide();
 		 }
       
-	  $('#contacts_table').DataTable();
+	  $('#contacts_table').DataTable({
+	  			"columns": [{data:"contact", className:"editable"},{data:"email", className:"editable"},{data:"original"}] 
+         		//"processing": true,
+        		//"data": zimbraClient.currentGroupJson(),
+               });
       $('li.tree-toggler').click(function () {
         $(this).children('ul.tree').toggle(300);
       });
-            }); 
+     
+      }); 
     </script>  
   </body>
 </html>
