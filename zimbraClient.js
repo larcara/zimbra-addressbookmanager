@@ -63,8 +63,9 @@ var zimbraClient= {
 					var delegated_folders = data.Body.GetFolderResponse.link && $.map(data.Body.GetFolderResponse.link[0], function(n){return walk_folder(n);});
 					//console.log(delegated_folders);
 					zimbraClient.addressBooks = $.map( local_folders, function( obj ) {return obj.view=="contact" ? obj : null;});
-					$.each(zimbraClient.addressBooks, function(index, value){zimbraClient.getAddressBook(value)})
-				}, "json")).then(function(){console.log("done")})
+					//$.each(zimbraClient.addressBooks, function(index, value){zimbraClient.getAddressBook(value)})
+				}, "json")).then(function(){$.each(zimbraClient.addressBooks, function(index, value){zimbraClient.getAddressBook(value)})});
+
 	},
 	getAddressBook: function(addressBook){
 		//console.log(addressBook );
@@ -74,14 +75,14 @@ var zimbraClient= {
 		var header='"Header":{"context":{"_jsns":"urn:zimbra","authToken":"'+ this.authToken +'"}}';
         var body='"Body":{"SearchRequest":{"_jsns":"urn:zimbraMail","offset":0,"limit":100,"query":"in:\\"'+ addressBook.absFolderPath.substring(1) +'\\"","types":"contact","fetch":1}}'
 		
-		$.post(this.hostName + "/service/soap/SearchRequest", "{" + header + "," + body + "}",
+		var getAddressBookFunction =  $.when($.post(this.hostName + "/service/soap/SearchRequest", "{" + header + "," + body + "}",
 					function(data){
 					   console.log(addressBook);
 					   addressBook.groups =  addressBook.groups || []
 					   addressBook.contacts =  addressBook.contacts || []
 					   $.each( data.Body.SearchResponse.cn, function( index,obj ) {obj._attrs.type=="group" ? addressBook.groups.push(obj) : addressBook.contacts.push(obj);})
-			},"json")
-		return true;
+			},"json"))
+		return getAddressBookFunction;
     //if data.size == limit >> getGroup altri 100
 	
 	}
@@ -167,7 +168,7 @@ function generateLIForGroup(group){
 	console.log(group);
     var li = $('<li/>', {
 			'id': group.id,
-			'class':' list-group-item list-group-item-info li_group', 
+			'class':' li_group', 
 			'text': group.fileAsStr,
 			'data-id':group.id ,
 			'data-groupname': group.fileAsStr, 

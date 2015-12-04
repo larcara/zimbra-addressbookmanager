@@ -140,8 +140,11 @@
         $(".login_box").hide();
       });    
     $("#reload_groups").click(function(){
-				$.when(zimbraClient.getAddressBooks()).done(function(){console.log(zimbraClient.addressBooks);popolateAddressBooks()})
-				});    
+        var addressBooks = zimbraClient.getAddressBooks();
+
+				$.when(addressBooks).done(function(){popolateAddressBooks()})
+				});
+            
     $(".saveGroups").click(function(){
         console.log("start sving group of:" + $("#label_group_name").data("id"));
         var table=$('#contacts_table').DataTable();
