@@ -40,6 +40,7 @@ var zimbraClient= {
 	currentGroup: "",
 	currentGroupJson: function(){return groupToJson(this.currentGroup)},
 	addressBooks:[],
+	localContacts: [],
 	isConnected: function() {return !this.authToken=="";},
 	user:"",
 	password:"",
@@ -71,6 +72,7 @@ var zimbraClient= {
 
 	},
 	getAddressBook: function(addressBook){
+		//TODO recursive call di getAddressBook in fmore than 1000 result
 		groups=[]
         contacts=[]
 		var header='"Header":{"context":{"_jsns":"urn:zimbra","authToken":"'+ this.authToken +'"}}';
@@ -81,7 +83,8 @@ var zimbraClient= {
 					   //console.log(addressBook);
 					   addressBook.groups =  addressBook.groups || []
 					   addressBook.contacts =  addressBook.contacts || []
-					   $.each( data.Body.SearchResponse.cn, function( index,obj ) {obj._attrs.type=="group" ? addressBook.groups.push(obj) : addressBook.contacts.push(obj);})
+
+					   $.each( data.Body.SearchResponse.cn, function( index,obj ) {obj._attrs.type=="group" ? addressBook.groups.push(obj) : addressBook.contacts.push(obj)})
 			},"json"))
 		return getAddressBookFunction;
     //if data.size == limit >> getGroup altri 100
@@ -109,7 +112,7 @@ function groupToJson(dlist){
 		while (match != null) {
 			//console.log(match[0]);
 			contact=REGEXP_EMAIL.exec(match[0]);
-			email={"DT_RowId":counter++, "contact" : contact[1] || "", "email" : contact[2], "original" : contact[0] };
+			email={"DT_RowId":counter++, "contact_id" : "0", "contact" : contact[1] || "", "email" : contact[2], "original" : contact[0], "link":"0" };
 			//console.log(email);
 			emails.push(email);
     	    match = REGEXP_EMAILS.exec(zimbraClient.currentGroup);
@@ -162,13 +165,15 @@ function popolateAddressBooks(){
     var group_div=$(".address_books_ul")
     group_div.empty();
     $.each(zimbraClient.addressBooks,function(index, value){
-		//console.log(value);
-		var addressBook_ul=generateUlForAddressBook(value);
-        group_div.append(addressBook_ul);
-		$.each(value.groups,function(index, value){
-			var group_li=generateLIForGroup(value);
-			addressBook_ul.append(group_li);
-		})
+		if (value.groups.length > 0 )
+			{
+				var addressBook_ul=generateUlForAddressBook(value);
+        		group_div.append(addressBook_ul);
+				$.each(value.groups,function(index, value){
+						var group_li=generateLIForGroup(value);
+						addressBook_ul.append(group_li);
+					})
+			}
     })
     $('label.tree-toggler').click(function () {
         //$(this).parent().children('ul.tree').toggle(300);
@@ -191,7 +196,7 @@ function generateUlForAddressBook(address_book){
           'data-id':address_book.id , 'data-targetid': 'address_book_ul_' + address_book.id , 
           'data-folderpath': address_book.absFolderPath
         }
-        ).append($('<label/>', {'class':' tree-toggler nav-header',  'text': address_book.name})
+        ).append($('<label/>', {'class':' tree-toggler nav-header',  'text': 'Rubrica ' + address_book.name})
         ).append($('<ul/>', {'class':'nav nav-list tree', 'id': 'address_book_ul_' + address_book.id}));
   return li;
 }
@@ -240,19 +245,4 @@ function generateLIForGroup(group){
   return li;
 };
 
-function makeTableEditable(){
-	 $('#contacts_table tr td.editable').editable(function(value, settings) {
-	 	//console.log(this);
-     	//console.log(value);
-     	//console.log(settings);
-     	var table=$('#contacts_table').DataTable();
-     	table.cell(this).data(value).draw();
-     	return(value);
-  			}, {
-     		//type    : 'textarea',
-     		submit  : 'OK',
-     		tooltip   : 'Click to edit...',
-     		event     : "click",
-      		style  : "inherit"
- 		});
-};
+
