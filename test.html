@@ -82,7 +82,7 @@
 						<tr>
               <th></th>
 							<th>Contact Name</th>
-							<th>Email</th>
+							<th data-contactid="">Email</th>
 							<th>Original Value</th>
               <th></th>
 						</tr>
@@ -127,14 +127,14 @@
     <script src="./zimbraClient.js"></script>
 
     <script>
-       
+    var contacts_table;   
     $(document).ready(function() {
-       var contacts_table = $('#contacts_table').DataTable({
+       contacts_table = $('#contacts_table').DataTable({
           //select: true,
           columns: [
               {data:"contact_id",orderable:false},
               {data:"contact", className:"editable"},
-              {data:"email", className:"editable"},
+              {data:"email", className:"email editable"},
               {data:"original"},
               // { "fnRender": function (oObj) {
               //      return '<a href=/cgi/empdetails.php?showemp=' + oObj.aData[0] + '>' + 'More' + '</a>';
@@ -144,14 +144,26 @@
                 $(nTd).html("<span class='glyphicon glyphicon-trash' aria-hidden='true' onClick='deleteRow($(this))'></span>");
                }}  
             ],
-            buttons: ['excel','print'],
+            buttons: ['excel',
+                      'print',
+                      { text: 'Add new',
+                          action: function ( e, dt, node, config ) {
+                              dt.row.add( {"DT_RowId":null, "contact_id" : "", "contact" : "--", "email" : "--", "original" : "", "link":"0" } ).draw( false );
+                              makeTableEditable();}
+                      }
+             ],
             "createdRow": function( row, data, dataIndex ) {
               console.log (data);
-             if ( data["contact_id"] == "0" ) 
+             if ( data["contact_id"] == "" ) 
                 { $(row).addClass( 'editable' ); }
               else
                 { $(row).addClass( 'contact' );} 
-            }
+            },
+            "columnDefs":[
+              {"targets":0, "searchable":false, "visible":false},
+              {"targets":3, "searchable":false, "visible":false}
+            ]
+
       });
 
       contacts_table.buttons().container().appendTo( $('.col-sm-6:eq(0)', contacts_table.table().container() ) );
@@ -190,20 +202,29 @@
 	 
       }); 
 
- function makeTableEditable(){
+      function makeTableEditable(){
          $('#contacts_table tr.editable td.editable').editable(function(value, settings) {
-          //console.log(this);
-            //console.log(value);
-            //console.log(settings);
             var table=$('#contacts_table').DataTable();
             table.cell(this).data(value).draw();
             return(value);
               }, {
-              //type    : 'textarea',
+              type    : 'text',
               submit  : 'OK',
               tooltip   : 'Click to edit...',
               event     : "click",
-                style  : "inherit"
+              style  : "inherit"
+          });
+         $('#contacts_table tr.contact td.editable.email').editable(
+            function(value, settings) {
+              var table=$('#contacts_table').DataTable();
+              table.cell(this).data(value).draw();
+              return(value);
+              },
+            {
+              type: 'select',
+              "data": function(value, settings) {
+                    console.log(contacts_table.row($(this).parent()).data());
+                    return "{'test':'a'}"}
           });
       };
 

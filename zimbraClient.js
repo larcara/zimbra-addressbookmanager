@@ -40,10 +40,31 @@ var zimbraClient= {
 	currentGroup: "",
 	currentGroupJson: function(){return groupToJson(this.currentGroup)},
 	addressBooks:[],
-	localContacts: [],
+	email_dictionary: {},
+	user_contacts: {},
 	isConnected: function() {return !this.authToken=="";},
 	user:"",
 	password:"",
+	isContact: function(contact_email){
+		//TODO: to refactor. create a dictionry email -> contact to improve search
+			if (contact_email in this.email_dictionary)
+				return this.email_dictionary[contact_email]
+			/*
+			var contacts_founded=$.map(this.addressBooks,
+								 function(obj){
+ 								 		var x= $.map(obj.contacts,
+								 					function(contact){
+								 						if (contact._attrs.email == contact_email)
+								 							return contact ;
+								 					}
+								 				);
+								 		return x;
+
+								  }
+							);
+			return contacts_founded;
+			*/
+	},
 	getAuth:function(){
 		if (this.isConnected()) return true;
 		data=$.post(this.hostName + "/service/soap/AuthRequest",
@@ -84,7 +105,41 @@ var zimbraClient= {
 					   addressBook.groups =  addressBook.groups || []
 					   addressBook.contacts =  addressBook.contacts || []
 
-					   $.each( data.Body.SearchResponse.cn, function( index,obj ) {obj._attrs.type=="group" ? addressBook.groups.push(obj) : addressBook.contacts.push(obj)})
+					   $.each( data.Body.SearchResponse.cn, function( index,obj ) 
+					   		{
+						   		if (obj._attrs.type=="group") 
+						   			{addressBook.groups.push(obj)}
+						   		else
+						   		 {
+						   		 	//TODO... if a contact have more tha one email: 
+						   		 	/*
+						   		 	_attrs: Object
+										email: "larcara@gmail.com"
+										email2: "l.arcara@gmail.com"
+										email3: "larcara+1@gmail.com"
+										firstName: "Luca"
+										fullName: "A, Luca"
+										lastName: "A"
+						   		 	*/
+						   		 	email=obj._attrs.email;
+						   		 	zimbraClient.user_contacts[obj.id.toString()]=obj;
+						   		 	zimbraClient.email_dictionary[email]=obj.id;
+						   		 	var counter=2;
+						   		 	while (email!=null)
+						   		 	{
+										if ('email'+counter in obj._attrs)
+											{
+												email=obj._attrs["email"+counter];
+												zimbraClient.email_dictionary[email]=obj.id;
+												counter++
+											}
+											else
+											break
+
+						   		 	}
+						   		 	addressBook.contacts.push(obj)
+						   		 }
+					   		});
 			},"json"))
 		return getAddressBookFunction;
     //if data.size == limit >> getGroup altri 100
@@ -102,6 +157,8 @@ var zimbraClient= {
 	
 }
 
+
+
 function groupToJson(dlist){
 	    //console.log(dlist);
 		dlist=dlist.replace(/"/, "");
@@ -112,50 +169,16 @@ function groupToJson(dlist){
 		while (match != null) {
 			//console.log(match[0]);
 			contact=REGEXP_EMAIL.exec(match[0]);
-			email={"DT_RowId":counter++, "contact_id" : "0", "contact" : contact[1] || "", "email" : contact[2], "original" : contact[0], "link":"0" };
+
+
+			email={"DT_RowId": "contact_row_" + counter++, "contact_id" : zimbraClient.isContact(contact[2])+"", "contact" : contact[1] || "", "email" : contact[2], "original" : contact[0], "link":"0" };
 			//console.log(email);
 			emails.push(email);
     	    match = REGEXP_EMAILS.exec(zimbraClient.currentGroup);
 		}
 		return emails
 		
-		/*
-		var emails=dlist.split(REGEXP_EMAILS);
-		var response={
-			"draw" : 1,
-			"recordsTotal" : emails.length,
-			"data": $.map(emails, function(value,index){
-					record = {
-						"DT_RowId": index,
-						"contatto": value,
-						"email": value,
-						"original" : value
-					}
-					return record;
-				})
-			
-		};
 		
-		//return response;
-		//console.log(emails);
-		var response = $.map(emails, function(value,index){
-					console.log(value);
-					if (value.indexOf("@")> 0 )
-					{
-						console.log(value);
-						record = {
-							"DT_RowId": index,
-							"contatto": value,
-							"email": value,
-							"original" : value
-						}
-						return record;
-					}
-				})
-			
-		
-		return response;
-		*/
 }
 
 
@@ -175,15 +198,6 @@ function popolateAddressBooks(){
 					})
 			}
     })
-    $('label.tree-toggler').click(function () {
-        //$(this).parent().children('ul.tree').toggle(300);
-      });
-
-    $(".address_book_li").click(function(){
-        //getGroups($(this).data("folderpath").substring(1), $(this));
-//        $(this).children('ul.tree').toggle(300);
-    });
-    
 }
 
 
@@ -212,35 +226,17 @@ function generateLIForGroup(group){
 		);
     li.click(function(){
 		zimbraClient.currentGroup=$(this).data("dlist");
-        //console.log(zimbraClient.currentGroup);
-        //var emails=$(this).data("dlist").split(/((?:\"[^\"]*\" )?<?[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}>?)/);
+
         var table=$('#contacts_table').DataTable();
         table.clear();
         table.rows.add(zimbraClient.currentGroupJson()).draw();
-        /*
-        var table=$('#contacts_table').DataTable();
-        table.clear();
-        $.each(emails, function(index,value){
-            if (value.indexOf("@") > 0)
-              table.row.add([index, value, value]);
-          });
-        table.draw();
-        */
+
         var group_label=$("#label_group_name")
         group_label.data("id", $(this).data("id"));
         group_label.empty()
         group_label.append($(this).data("groupname"));
         makeTableEditable()
-        //$(".table-cell").click(function(){
-        //        var newvalue=prompt("Modifica Email", $(this).text());
-        //        console.log (newvalue);
-        //        if (newvalue != "")
-        //          {
-        //            //$(this).empty();
-        //            $(this).text(newvalue);
-		//
-  		//          }
-        //      })
+        
     })
   return li;
 };
