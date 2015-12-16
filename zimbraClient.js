@@ -49,6 +49,8 @@ var zimbraClient= {
 		//TODO: to refactor. create a dictionry email -> contact to improve search
 			if (contact_email in this.email_dictionary)
 				return this.email_dictionary[contact_email]
+			else
+				return ""
 			/*
 			var contacts_founded=$.map(this.addressBooks,
 								 function(obj){
@@ -124,6 +126,7 @@ var zimbraClient= {
 						   		 	email=obj._attrs.email;
 						   		 	zimbraClient.user_contacts[obj.id.toString()]=obj;
 						   		 	zimbraClient.email_dictionary[email]=obj.id;
+						   		 	zimbraClient.user_contacts[obj.id.toString()]["emails"]=[email];
 						   		 	var counter=2;
 						   		 	while (email!=null)
 						   		 	{
@@ -131,6 +134,7 @@ var zimbraClient= {
 											{
 												email=obj._attrs["email"+counter];
 												zimbraClient.email_dictionary[email]=obj.id;
+												zimbraClient.user_contacts[obj.id.toString()]["emails"].push(email);
 												counter++
 											}
 											else
@@ -171,7 +175,7 @@ function groupToJson(dlist){
 			contact=REGEXP_EMAIL.exec(match[0]);
 
 
-			email={"DT_RowId": "contact_row_" + counter++, "contact_id" : zimbraClient.isContact(contact[2])+"", "contact" : contact[1] || "", "email" : contact[2], "original" : contact[0], "link":"0" };
+			email={"DT_RowId": "contact_row_" + counter++, "contact_id" : zimbraClient.isContact(contact[2]) +"", "contact" : contact[1] || "", "email" : contact[2], "original" : contact[0], "link":"0" };
 			//console.log(email);
 			emails.push(email);
     	    match = REGEXP_EMAILS.exec(zimbraClient.currentGroup);

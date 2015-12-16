@@ -60,40 +60,58 @@
           </div>
         </div>
         <div class="col-sm-7">
-            <div class="panel panel-default panel-primary">
-				<div class="panel-heading panel-primary">
-					Gruppo:
-					<label id="label_group_name" class="label_group_name" data-grouppath="0"  data-id="0">ZZZZZZZZZZZZZZ</label>
-				</div>
+          <div class="panel panel-default panel-primary">
+    				<div class="panel-heading panel-primary">
+    					Gruppo:
+    					<label id="label_group_name" class="label_group_name" data-grouppath="0"  data-id="0">ZZZZZZZZZZZZZZ</label>
+    				</div>
 				
-				<div class="panel-body">
-				  <div class="form-horizontal form-group">
-					<div class="col-sm-7">
-					  <input type="search" class="form-control" id="add_account_to_group" placeholder="add contact by autocomplete or emails(s)">
-					</div>
-					<div class="col-sm-1">  
-					  <a class="btn btn-primary btn-sm ">Add</a>
-					</div>
-				  </div>
-				</div>
-				<div class="panel-body">
-				  <table id="contacts_table" class="table table-hover table-condensed">
-					<thead>
-						<tr>
-              <th></th>
-							<th>Contact Name</th>
-							<th data-contactid="">Email</th>
-							<th>Original Value</th>
-              <th></th>
-						</tr>
-					</thead>
-					<tbody>
-					  
-					</tbody>
-				  </table>
-				  <button type="button" class="btn btn-default saveGroups" >saveGroups</button>
-				</div>
-			</div>
+    				<div class="panel-body">
+    				  <div class="form-horizontal form-group">
+    					<div class="col-sm-7">
+    					  <input type="search" class="form-control" id="add_account_to_group" placeholder="add contact by autocomplete or emails(s)">
+    					</div>
+    					<div class="col-sm-1">  
+    					  <a class="btn btn-primary btn-sm ">Add</a>
+    					</div>
+    				  </div>
+    				</div>
+    				<div class="panel-body panel-group">
+    				  <table id="contacts_table" class="table table-hover table-condensed">
+    					<thead>
+    						<tr>
+                  <th></th>
+    							<th>Contact Name</th>
+    							<th data-contactid="">Email</th>
+    							<th>Original Value</th>
+                  <th></th>
+    						</tr>
+    					</thead>
+    					<tbody>
+    					  
+    					</tbody>
+    				  </table>
+    				  <button type="button" class="btn btn-default saveGroups" >saveGroups</button>
+    				</div>
+            <div class="panel-body panel-contact">
+              <form class="form-horizontal">
+                <div class="form-group">
+                  <label for="contactName" class="col-sm-2 control-label">Contact Name</label>
+                  <div class="col-sm-10">
+                    <input type="text" class="form-control" id="contactName" placeholder="Contact Name" readonly>
+                  </div>
+                </div>
+                <div class="form-group contact_template">
+                  <label class="col-sm-2 control-label">Email</label>
+                  <div class="col-sm-10">
+                    <input type="email" class="form-control email"  placeholder="email">
+                  </div>
+                </div>
+
+              </form>
+              
+            </div>
+			    </div>
         </div>
       </div>
       
@@ -129,11 +147,12 @@
     <script>
     var contacts_table;   
     $(document).ready(function() {
+       $(".panel-contact").hide();
        contacts_table = $('#contacts_table').DataTable({
           //select: true,
           columns: [
               {data:"contact_id",orderable:false},
-              {data:"contact", className:"editable"},
+              {data:"contact", className:"contact editable"},
               {data:"email", className:"email editable"},
               {data:"original"},
               // { "fnRender": function (oObj) {
@@ -195,7 +214,7 @@
             console.log("start sving group of:" + $("#label_group_name").data("id"));
             var table=$('#contacts_table').DataTable();
             var new_dlist=$.map(table.data(),function(value){return value["contact"] + " <" + value["email"] + ">"});
-            console.log("values:" +   new_dlist );
+            console.log("values:" +  new_dlist);
             zimbraClient.saveGroups($("#label_group_name").data("id"),new_dlist);
         }); 
 
@@ -205,6 +224,7 @@
       function makeTableEditable(){
          $('#contacts_table tr.editable td.editable').editable(function(value, settings) {
             var table=$('#contacts_table').DataTable();
+            $(".panel-contact").hide();
             table.cell(this).data(value).draw();
             return(value);
               }, {
@@ -214,17 +234,27 @@
               event     : "click",
               style  : "inherit"
           });
-         $('#contacts_table tr.contact td.editable.email').editable(
-            function(value, settings) {
+         $('#contacts_table tr.contact td.editable.email').editable(function(value, settings) {
+              $(".panel-contact").hide();
               var table=$('#contacts_table').DataTable();
               table.cell(this).data(value).draw();
               return(value);
               },
             {
               type: 'select',
+              submit  : 'OK',
               "data": function(value, settings) {
-                    console.log(contacts_table.row($(this).parent()).data());
-                    return "{'test':'a'}"}
+                    var dt_data= contacts_table.row($(this).parent()).data();
+                    var array={}
+                    $.each(zimbraClient.user_contacts[dt_data.contact_id]["emails"],
+                                   function(index,value){ array[value]=value});
+                    return array;
+                  }
+          });
+          $('#contacts_table tr.contact td.contact').click(function() {
+            var dt_data= contacts_table.row($(this).parent()).data();
+            console.log(dt_data["contact_id"]);
+            editContact(dt_data["contact_id"]);
           });
       };
 
@@ -233,6 +263,33 @@
         table.row(row.parents('tr')).remove().draw();
       };
       
+      function editContact(id){
+        var contact_panel=$(".panel-contact");
+        contact_panel.show();
+        var contact= zimbraClient.user_contacts[id];
+        $("#contactName").val(contact.fileAsStr);
+        email=contact._attrs.email;
+        new_line=$(".contact_template").clone()
+        new_line.removeClass("contact_template hide").addClass("success").find(".email").prop({ id: email, name: "email"}).val(email);
+        
+        contact_panel.append(new_line);
+
+        
+        var counter=2;
+        while (email!=null)
+          {
+                email=null;
+                if ('email'+counter in contact._attrs)
+                  {
+                    email=contact._attrs["email"+counter];
+                    new_line=$(".contact_template").clone()
+                    new_line.removeClass("contact_template hide").addClass("success").find(".email").prop({ id: email, name: "email"}).val(email);
+                    contact_panel.append(new_line);
+                    counter++
+                  }
+          }
+          
+      }
      
     </script>  
   </body>
