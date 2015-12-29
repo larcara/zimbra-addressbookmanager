@@ -17,6 +17,85 @@ var htmlEscapes = {
 // Regex containing the keys listed immediately above.
 var htmlEscaper = /[&<>"'\/]/g;
 
+
+var contacts_table; 
+
+$(document).ready(function() {
+	chrome.storage.sync.get({
+        server: "",
+      }, function(items) {
+        zimbraClient.hostName  = items.server;
+        chrome.cookies.get({url: items.server, name:"ZM_AUTH_TOKEN"}, function(cookie){zimbraClient.authToken=cookie.value});
+      });
+
+   $(".contact_template").hide();
+   $(".panel-contact").hide();
+   contacts_table = $('#contacts_table').DataTable({
+      //select: true,
+      columns: [
+          {data:"contact_id",orderable:false},
+          {data:"contact", className:"contact editable"},
+          {data:"email", className:"email editable"},
+          {data:"original"},
+          // { "fnRender": function (oObj) {
+          //      return '<a href=/cgi/empdetails.php?showemp=' + oObj.aData[0] + '>' + 'More' + '</a>';
+          //    }
+          // }
+          {data:"link","fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+            $(nTd).html("<span class='glyphicon glyphicon-trash' aria-hidden='true' onClick='deleteRow($(this))'></span>");
+           }}  
+        ],
+        buttons: ['excel',
+                  'print',
+                  { text: 'Add new',
+                      action: function ( e, dt, node, config ) {
+                          dt.row.add( {"DT_RowId":null, "contact_id" : "", "contact" : "--", "email" : "--", "original" : "", "link":"0" } ).draw( false );
+                          makeTableEditable();}
+                  }
+         ],
+        "createdRow": function( row, data, dataIndex ) {
+          console.log (data);
+         if ( data["contact_id"] == "" ) 
+            { $(row).addClass( 'editable' ); }
+          else
+            { $(row).addClass( 'contact' );} 
+        },
+        "columnDefs":[
+          {"targets":0, "searchable":false, "visible":false},
+          {"targets":3, "searchable":false, "visible":false}
+        ]
+
+  });
+
+  contacts_table.buttons().container().appendTo( $('.col-sm-6:eq(0)', contacts_table.table().container() ) );
+  zimbraClient.getAuth()
+  $(".search_box").show();
+  
+    $("#reload_groups").click(function(){
+        var addressBooks = zimbraClient.getAddressBooks();
+        zimbraClient.getAddressBooks();
+        popolateAddressBooks()
+      });
+        
+    $(".saveGroups").click(function(){
+        console.log("start saving group of:" + $("#label_group_name").data("id"));
+        var table=$('#contacts_table').DataTable();
+        var new_dlist=$.map(table.data(),function(value){return value["contact"] + " <" + value["email"] + ">"});
+        console.log("values:" +  new_dlist);
+        zimbraClient.saveGroups($("#label_group_name").data("id"),new_dlist);
+    }); 
+    $(".saveContact").click(function(){
+        contact_id=$("#contactName").data("id");
+        form_emails=$(".email.active").map(function(){return $(this).val()});
+        console.log("start saving contact :" + contact_id);
+        console.log("start saving emails :" + form_emails);
+        zimbraClient.saveContact(contact_id,form_emails);
+    }); 
+
+ 
+  }); 
+
+
 // Escape a string for HTML interpolation.
 _.escape = function(string) {
   return ('' + string).replace(htmlEscaper, function(match) {
@@ -33,10 +112,9 @@ function walk_folder(obj){
 		{return obj}
 }
 
-
 var zimbraClient= {
-	authToken: jQuery.query.get('authToken'),
-	hostName: jQuery.query.get('hostName'),
+	authToken: "",
+ 	hostName: "",
 	currentGroup: "",
 	currentGroupJson: function(){return groupToJson(this.currentGroup)},
 	addressBooks:[],
@@ -183,6 +261,7 @@ var zimbraClient= {
 
 
 
+
 function groupToJson(dlist){
 	    //console.log(dlist);
 		dlist=dlist.replace(/"/, "");
@@ -264,5 +343,80 @@ function generateLIForGroup(group){
     })
   return li;
 };
+
+    
+
+function makeTableEditable(){
+ $('#contacts_table tr.editable td.editable').editable(function(value, settings) {
+    var table=$('#contacts_table').DataTable();
+    $(".panel-contact").hide();
+    table.cell(this).data(value).draw();
+    return(value);
+      }, {
+      type    : 'text',
+      submit  : 'OK',
+      event     : "click",
+      style  : "inherit"
+  });
+ $('#contacts_table tr.contact td.editable.email').editable(function(value, settings) {
+      $(".panel-contact").hide();
+      var table=$('#contacts_table').DataTable();
+      table.cell(this).data(value).draw();
+      return(value);
+      },
+    {
+      type: 'select',
+      submit  : 'OK',
+      "data": function(value, settings) {
+            var dt_data= contacts_table.row($(this).parent()).data();
+            var array={}
+            $.each(zimbraClient.user_contacts[dt_data.contact_id]["emails"],
+                           function(index,value){ array[value]=value});
+            return array;
+          }
+  });
+  $('#contacts_table tr.contact td.contact').click(function() {
+    var dt_data= contacts_table.row($(this).parent()).data();
+    console.log(dt_data["contact_id"]);
+    editContact(dt_data["contact_id"]);
+  });
+};
+
+function deleteRow(row){
+var table=$('#contacts_table').DataTable();
+table.row(row.parents('tr')).remove().draw();
+};
+
+function editContact(id){
+var contact_panel=$(".panel-contact");
+$(".new_email_line").remove();
+contact_panel.show();
+var contact= zimbraClient.user_contacts[id];
+$("#contactName").val(contact.fileAsStr);
+$("#contactName").data("id", id);
+email=contact._attrs.email;
+new_line=$(".contact_template").clone()
+new_line.removeClass("contact_template").addClass("new_email_line").find(".email").prop({ id: email, name: "email"}).addClass("active").val(email);
+
+contact_panel.append(new_line);
+
+
+var counter=2;
+while (email!=null)
+  {
+        email=null;
+        if ('email'+counter in contact._attrs)
+          {
+            email=contact._attrs["email"+counter];
+            new_line=$(".contact_template").clone()
+            new_line.removeClass("contact_template").addClass("new_email_line").find(".email").prop({ id: email, name: "email"}).addClass("active").val(email);
+            contact_panel.append(new_line);
+            counter++
+          }
+  }
+  $(".new_email_line").show();
+  
+}
+
 
 
