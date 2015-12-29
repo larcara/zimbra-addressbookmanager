@@ -66,16 +66,19 @@
     					<label id="label_group_name" class="label_group_name" data-grouppath="0"  data-id="0">ZZZZZZZZZZZZZZ</label>
     				</div>
 				
-    				<div class="panel-body">
-    				  <div class="form-horizontal form-group">
-    					<div class="col-sm-7">
-    					  <input type="search" class="form-control" id="add_account_to_group" placeholder="add contact by autocomplete or emails(s)">
-    					</div>
-    					<div class="col-sm-1">  
-    					  <a class="btn btn-primary btn-sm ">Add</a>
-    					</div>
+    				<!--
+            <div class="panel-body">
+    				  
+              <div class="form-horizontal form-group">
+      					<div class="col-sm-7">
+      					  <input type="search" class="form-control" id="add_account_to_group" placeholder="add contact by autocomplete or emails(s)">
+      					</div>
+      					<div class="col-sm-1">  
+      					  <a class="btn btn-primary btn-sm ">Add</a>
+      					</div>
     				  </div>
-    				</div>
+            </div>
+            -->
     				<div class="panel-body panel-group">
     				  <table id="contacts_table" class="table table-hover table-condensed">
     					<thead>
@@ -98,7 +101,7 @@
                 <div class="form-group">
                   <label for="contactName" class="col-sm-2 control-label">Contact Name</label>
                   <div class="col-sm-10">
-                    <input type="text" class="form-control" id="contactName" placeholder="Contact Name" readonly>
+                    <input type="text" class="form-control" id="contactName" placeholder="Contact Name" readonly data-id="">
                   </div>
                 </div>
                 <div class="form-group contact_template">
@@ -107,7 +110,7 @@
                     <input type="email" class="form-control email"  placeholder="email">
                   </div>
                 </div>
-
+                <button type="button" class="btn btn-default saveContact" >saveContact</button>
               </form>
               
             </div>
@@ -145,8 +148,13 @@
     <script src="./zimbraClient.js"></script>
 
     <script>
-    var contacts_table;   
+    var contacts_table; 
+    function popolateContactForm() {
+
+    }
     $(document).ready(function() {
+
+       $(".contact_template").hide();
        $(".panel-contact").hide();
        contacts_table = $('#contacts_table').DataTable({
           //select: true,
@@ -211,11 +219,18 @@
           });
             
         $(".saveGroups").click(function(){
-            console.log("start sving group of:" + $("#label_group_name").data("id"));
+            console.log("start saving group of:" + $("#label_group_name").data("id"));
             var table=$('#contacts_table').DataTable();
             var new_dlist=$.map(table.data(),function(value){return value["contact"] + " <" + value["email"] + ">"});
             console.log("values:" +  new_dlist);
             zimbraClient.saveGroups($("#label_group_name").data("id"),new_dlist);
+        }); 
+        $(".saveContact").click(function(){
+            contact_id=$("#contactName").data("id");
+            form_emails=$(".email.active").map(function(){return $(this).val()});
+            console.log("start saving contact :" + contact_id);
+            console.log("start saving emails :" + form_emails);
+            zimbraClient.saveContact(contact_id,form_emails);
         }); 
 
 	 
@@ -230,7 +245,6 @@
               }, {
               type    : 'text',
               submit  : 'OK',
-              tooltip   : 'Click to edit...',
               event     : "click",
               style  : "inherit"
           });
@@ -265,12 +279,14 @@
       
       function editContact(id){
         var contact_panel=$(".panel-contact");
+        $(".new_email_line").remove();
         contact_panel.show();
         var contact= zimbraClient.user_contacts[id];
         $("#contactName").val(contact.fileAsStr);
+        $("#contactName").data("id", id);
         email=contact._attrs.email;
         new_line=$(".contact_template").clone()
-        new_line.removeClass("contact_template hide").addClass("success").find(".email").prop({ id: email, name: "email"}).val(email);
+        new_line.removeClass("contact_template").addClass("new_email_line").find(".email").prop({ id: email, name: "email"}).addClass("active").val(email);
         
         contact_panel.append(new_line);
 
@@ -283,11 +299,12 @@
                   {
                     email=contact._attrs["email"+counter];
                     new_line=$(".contact_template").clone()
-                    new_line.removeClass("contact_template hide").addClass("success").find(".email").prop({ id: email, name: "email"}).val(email);
+                    new_line.removeClass("contact_template").addClass("new_email_line").find(".email").prop({ id: email, name: "email"}).addClass("active").val(email);
                     contact_panel.append(new_line);
                     counter++
                   }
           }
+          $(".new_email_line").show();
           
       }
      

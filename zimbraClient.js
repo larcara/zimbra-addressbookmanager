@@ -156,8 +156,28 @@ var zimbraClient= {
 		data= data  + '","a":[{"n":"dlist","_content":"' + members;  
 		data= data+ '"}]}}}}'
       $.post(this.hostName + "/service/soap/ModifyContactRequest",data, function(data,status,xhr){ zimbraClient.getAddressBooks()}, "json")	
+	},
+	saveContact: function(id,emails){
+		var data='{';
+		data= data + '"Header":{"context":{"_jsns":"urn:zimbra","authToken":"'+ this.authToken +'"}},';
+		data= data + '"Body":{"ModifyContactRequest":{"_jsns":"urn:zimbraMail","replace":"0","force":"1","cn":{"id":"' + id
+		data= data  + '","a":['
+		tmp_emails = []
+		$.each(emails, function(index,email){
+				value = '{"n":"email#index","_content":"#value"}'
+				if (index > 0 )
+					value = value.replace("#index", index + 1);
+				value = value.replace("#index", "");
+				value = value.replace("#value", email);
+				tmp_emails.push(value);
+				})
+		console.log (tmp_emails)
+		data= data  + tmp_emails.join(",");
+		data= data  + ']'
+		data= data+ '}}}}'
+		//console.log (this.hostName + "/service/soap/ModifyContactRequest",data, function(data,status,xhr){ zimbraClient.getAddressBooks()}, "json")	
+		$.post(this.hostName + "/service/soap/ModifyContactRequest",data, function(data,status,xhr){ zimbraClient.getAddressBooks()}, "json")	
 	}
-
 	
 }
 
