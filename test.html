@@ -1,0 +1,318 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Gestione Rubrica</title>
+
+    <!-- Bootstrap -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.5/css/bootstrap.css"/>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.10/css/dataTables.bootstrap.css"/>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/autofill/2.1.0/css/autoFill.bootstrap.min.css"/>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/1.1.0/css/buttons.bootstrap.css"/>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/select/1.1.0/css/select.bootstrap.css"/>
+ 
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+      <div class="row login_box">
+        
+        <div class="col-sm-4 col-sm-offset-4">
+          <form>
+            <div class="form-group">
+              <label for="server">server address</label>
+              <input type="text" class="form-control" id="server" placeholder="server" >
+            </div>
+            <div class="form-group">
+              <label for="loginEmail">Email address</label>
+              <input type="email" class="form-control" id="loginEmail" placeholder="Email" >
+            </div>
+            <div class="form-group">
+              <label for="loginPassword">Password</label>
+              <input type="password" class="form-control" id="loginPassword" placeholder="Password">
+            </div>
+            <button type="button" class="btn btn-default login" >Login</button>
+          </form>
+        </div>
+      </div>
+      <div class="row search_box">
+        <div class="col-sm-4">
+          <div class="panel panel-default panel-primary">
+
+            <div class="panel-heading panel-primary">Elenco Rubriche <span id="reload_groups" class="glyphicon glyphicon-refresh" aria-hidden="true"></span></div>
+            <div class="panel-body">
+              <input type="search" class="form-control" id="search" placeholder="search">
+              <div style="overflow-y: scroll; overflow-x: hidden; height: 500px;">
+                <ul class="list-group address_books_ul">
+                  <li class="list-group-item">AddressBook1</li>
+                  <li class="list-group-item">AddressBook2</li>
+                </ul>  
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-7">
+          <div class="panel panel-default panel-primary">
+    				<div class="panel-heading panel-primary">
+    					Gruppo:
+    					<label id="label_group_name" class="label_group_name" data-grouppath="0"  data-id="0">ZZZZZZZZZZZZZZ</label>
+    				</div>
+				
+    				<!--
+            <div class="panel-body">
+    				  
+              <div class="form-horizontal form-group">
+      					<div class="col-sm-7">
+      					  <input type="search" class="form-control" id="add_account_to_group" placeholder="add contact by autocomplete or emails(s)">
+      					</div>
+      					<div class="col-sm-1">  
+      					  <a class="btn btn-primary btn-sm ">Add</a>
+      					</div>
+    				  </div>
+            </div>
+            -->
+    				<div class="panel-body panel-group">
+    				  <table id="contacts_table" class="table table-hover table-condensed">
+    					<thead>
+    						<tr>
+                  <th></th>
+    							<th>Contact Name</th>
+    							<th data-contactid="">Email</th>
+    							<th>Original Value</th>
+                  <th></th>
+    						</tr>
+    					</thead>
+    					<tbody>
+    					  
+    					</tbody>
+    				  </table>
+    				  <button type="button" class="btn btn-default saveGroups" >saveGroups</button>
+    				</div>
+            <div class="panel-body panel-contact">
+              <form class="form-horizontal">
+                <div class="form-group">
+                  <label for="contactName" class="col-sm-2 control-label">Contact Name</label>
+                  <div class="col-sm-10">
+                    <input type="text" class="form-control" id="contactName" placeholder="Contact Name" readonly data-id="">
+                  </div>
+                </div>
+                <div class="form-group contact_template">
+                  <label class="col-sm-2 control-label">Email</label>
+                  <div class="col-sm-10">
+                    <input type="email" class="form-control email"  placeholder="email">
+                  </div>
+                </div>
+                <button type="button" class="btn btn-default saveContact" >saveContact</button>
+              </form>
+              
+            </div>
+			    </div>
+        </div>
+      </div>
+      
+      
+
+
+
+
+<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.5/js/bootstrap.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.js"></script>
+<script type="text/javascript" src="https://cdn.rawgit.com/bpampuch/pdfmake/0.1.18/build/pdfmake.js"></script>
+<script type="text/javascript" src="https://cdn.rawgit.com/bpampuch/pdfmake/0.1.18/build/vfs_fonts.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.10/js/jquery.dataTables.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.10/js/dataTables.bootstrap.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/autofill/2.1.0/js/dataTables.autoFill.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/autofill/2.1.0/js/autoFill.bootstrap.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/1.1.0/js/dataTables.buttons.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/1.1.0/js/buttons.bootstrap.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/1.1.0/js/buttons.colVis.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/1.1.0/js/buttons.flash.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/1.1.0/js/buttons.html5.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/1.1.0/js/buttons.print.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/select/1.1.0/js/dataTables.select.js"></script>
+
+    <script src="js/bootstrap.min.js"></script>
+
+<script type="text/javascript" src="js/jquery.query-object.js"></script>
+<script type="text/javascript" src="js/jquery.jeditable.js"></script>
+    <script src="./js.cookie.js"></script>
+    <script src="./zimbraClient.js"></script>
+
+    <script>
+    var contacts_table; 
+    function popolateContactForm() {
+
+    }
+    $(document).ready(function() {
+
+       $(".contact_template").hide();
+       $(".panel-contact").hide();
+       contacts_table = $('#contacts_table').DataTable({
+          //select: true,
+          columns: [
+              {data:"contact_id",orderable:false},
+              {data:"contact", className:"contact editable"},
+              {data:"email", className:"email editable"},
+              {data:"original"},
+              // { "fnRender": function (oObj) {
+              //      return '<a href=/cgi/empdetails.php?showemp=' + oObj.aData[0] + '>' + 'More' + '</a>';
+              //    }
+              // }
+              {data:"link","fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+                $(nTd).html("<span class='glyphicon glyphicon-trash' aria-hidden='true' onClick='deleteRow($(this))'></span>");
+               }}  
+            ],
+            buttons: ['excel',
+                      'print',
+                      { text: 'Add new',
+                          action: function ( e, dt, node, config ) {
+                              dt.row.add( {"DT_RowId":null, "contact_id" : "", "contact" : "--", "email" : "--", "original" : "", "link":"0" } ).draw( false );
+                              makeTableEditable();}
+                      }
+             ],
+            "createdRow": function( row, data, dataIndex ) {
+              console.log (data);
+             if ( data["contact_id"] == "" ) 
+                { $(row).addClass( 'editable' ); }
+              else
+                { $(row).addClass( 'contact' );} 
+            },
+            "columnDefs":[
+              {"targets":0, "searchable":false, "visible":false},
+              {"targets":3, "searchable":false, "visible":false}
+            ]
+
+      });
+
+      contacts_table.buttons().container().appendTo( $('.col-sm-6:eq(0)', contacts_table.table().container() ) );
+      
+      if (zimbraClient.isConnected())
+         {
+          $(".search_box").show();
+          $(".login_box").hide();
+          }
+          else
+          {$(".search_box").hide();}
+
+       $(".login").click(function(){
+              zimbraClient.hostName=$("#server").val();
+              zimbraClient.user=$("#loginEmail").val();
+              zimbraClient.password=$("#loginPassword").val();
+              $.when(zimbraClient.getAuth()).then(alert("auth ok")); // ,, getFolders);
+              $(".search_box").show();
+              $(".login_box").hide();
+        });    
+
+        $("#reload_groups").click(function(){
+            var addressBooks = zimbraClient.getAddressBooks();
+            zimbraClient.getAddressBooks();
+            popolateAddressBooks()
+          });
+            
+        $(".saveGroups").click(function(){
+            console.log("start saving group of:" + $("#label_group_name").data("id"));
+            var table=$('#contacts_table').DataTable();
+            var new_dlist=$.map(table.data(),function(value){return value["contact"] + " <" + value["email"] + ">"});
+            console.log("values:" +  new_dlist);
+            zimbraClient.saveGroups($("#label_group_name").data("id"),new_dlist);
+        }); 
+        $(".saveContact").click(function(){
+            contact_id=$("#contactName").data("id");
+            form_emails=$(".email.active").map(function(){return $(this).val()});
+            console.log("start saving contact :" + contact_id);
+            console.log("start saving emails :" + form_emails);
+            zimbraClient.saveContact(contact_id,form_emails);
+        }); 
+
+	 
+      }); 
+
+      function makeTableEditable(){
+         $('#contacts_table tr.editable td.editable').editable(function(value, settings) {
+            var table=$('#contacts_table').DataTable();
+            $(".panel-contact").hide();
+            table.cell(this).data(value).draw();
+            return(value);
+              }, {
+              type    : 'text',
+              submit  : 'OK',
+              event     : "click",
+              style  : "inherit"
+          });
+         $('#contacts_table tr.contact td.editable.email').editable(function(value, settings) {
+              $(".panel-contact").hide();
+              var table=$('#contacts_table').DataTable();
+              table.cell(this).data(value).draw();
+              return(value);
+              },
+            {
+              type: 'select',
+              submit  : 'OK',
+              "data": function(value, settings) {
+                    var dt_data= contacts_table.row($(this).parent()).data();
+                    var array={}
+                    $.each(zimbraClient.user_contacts[dt_data.contact_id]["emails"],
+                                   function(index,value){ array[value]=value});
+                    return array;
+                  }
+          });
+          $('#contacts_table tr.contact td.contact').click(function() {
+            var dt_data= contacts_table.row($(this).parent()).data();
+            console.log(dt_data["contact_id"]);
+            editContact(dt_data["contact_id"]);
+          });
+      };
+
+      function deleteRow(row){
+        var table=$('#contacts_table').DataTable();
+        table.row(row.parents('tr')).remove().draw();
+      };
+      
+      function editContact(id){
+        var contact_panel=$(".panel-contact");
+        $(".new_email_line").remove();
+        contact_panel.show();
+        var contact= zimbraClient.user_contacts[id];
+        $("#contactName").val(contact.fileAsStr);
+        $("#contactName").data("id", id);
+        email=contact._attrs.email;
+        new_line=$(".contact_template").clone()
+        new_line.removeClass("contact_template").addClass("new_email_line").find(".email").prop({ id: email, name: "email"}).addClass("active").val(email);
+        
+        contact_panel.append(new_line);
+
+        
+        var counter=2;
+        while (email!=null)
+          {
+                email=null;
+                if ('email'+counter in contact._attrs)
+                  {
+                    email=contact._attrs["email"+counter];
+                    new_line=$(".contact_template").clone()
+                    new_line.removeClass("contact_template").addClass("new_email_line").find(".email").prop({ id: email, name: "email"}).addClass("active").val(email);
+                    contact_panel.append(new_line);
+                    counter++
+                  }
+          }
+          $(".new_email_line").show();
+          
+      }
+     
+    </script>  
+  </body>
+</html>
+
+
+       
+    
+</html>
