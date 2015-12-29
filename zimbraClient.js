@@ -28,9 +28,9 @@ $(document).ready(function() {
         chrome.cookies.get({url: items.server, name:"ZM_AUTH_TOKEN"}, function(cookie){zimbraClient.authToken=cookie.value});
       });
 
-   $(".contact_template").hide();
-   $(".panel-contact").hide();
-   contacts_table = $('#contacts_table').DataTable({
+    $(".contact_template").hide();
+    $(".panel-contact").hide();
+    contacts_table = $('#contacts_table').DataTable({
       //select: true,
       columns: [
           {data:"contact_id",orderable:false},
@@ -72,9 +72,7 @@ $(document).ready(function() {
   $(".search_box").show();
   
     $("#reload_groups").click(function(){
-        var addressBooks = zimbraClient.getAddressBooks();
-        zimbraClient.getAddressBooks();
-        popolateAddressBooks()
+        zimbraClient.getAddressBooks(popolateAddressBooks());
       });
         
     $(".saveGroups").click(function(){
@@ -157,7 +155,7 @@ var zimbraClient= {
 				"json");
 		
 	},
-	getAddressBooks:function(){
+	getAddressBooks:function(callback){
       var header='{"Header":{"context":{"_jsns":"urn:zimbra","authToken":"'+ this.authToken +'"}}';
       var body='"Body":{"GetFolderRequest":{"_jsns":"urn:zimbraMail","visible":"0"}}}';
       $.when($.post(this.hostName + "/service/soap/GetFolderRequest", header + "," + body, 
@@ -169,7 +167,9 @@ var zimbraClient= {
 					//console.log(delegated_folders);
 					zimbraClient.addressBooks = $.map( local_folders, function( obj ) {return obj.view=="contact" ? obj : null;});
 					//$.each(zimbraClient.addressBooks, function(index, value){zimbraClient.getAddressBook(value)})
-				}, "json")).then(function(){$.each(zimbraClient.addressBooks, function(index, value){zimbraClient.getAddressBook(value)})});
+				}, "json")).then(function(){
+      								$.each(zimbraClient.addressBooks, function(index, value){zimbraClient.getAddressBook(value)})
+      							});
 
 	},
 	getAddressBook: function(addressBook){
@@ -191,16 +191,6 @@ var zimbraClient= {
 						   			{addressBook.groups.push(obj)}
 						   		else
 						   		 {
-						   		 	//TODO... if a contact have more tha one email: 
-						   		 	/*
-						   		 	_attrs: Object
-										email: "larcara@gmail.com"
-										email2: "l.arcara@gmail.com"
-										email3: "larcara+1@gmail.com"
-										firstName: "Luca"
-										fullName: "A, Luca"
-										lastName: "A"
-						   		 	*/
 						   		 	email=obj._attrs.email;
 						   		 	zimbraClient.user_contacts[obj.id.toString()]=obj;
 						   		 	zimbraClient.email_dictionary[email]=obj.id;
@@ -287,7 +277,6 @@ function groupToJson(dlist){
 
 
 function popolateAddressBooks(){
-	   //console.log(zimbraClient.addressBooks);
     var group_div=$(".address_books_ul")
     group_div.empty();
     $.each(zimbraClient.addressBooks,function(index, value){
@@ -304,8 +293,6 @@ function popolateAddressBooks(){
 }
 
 
-
-//////////////
 function generateUlForAddressBook(address_book){
   var li=$('<li/>', 
         { 'id': 'address_book_li_' + address_book.id, 
@@ -317,8 +304,8 @@ function generateUlForAddressBook(address_book){
         ).append($('<ul/>', {'class':'nav nav-list tree', 'id': 'address_book_ul_' + address_book.id}));
   return li;
 }
+
 function generateLIForGroup(group){
-	//console.log(group);
     var li = $('<li/>', {
 			'id': group.id,
 			'class':' li_group', 
