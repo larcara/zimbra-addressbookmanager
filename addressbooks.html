@@ -22,7 +22,6 @@
     <![endif]-->
   </head>
   <body>
-      <div class="row search_box">
         <div class="col-sm-4">
           <div class="panel panel-default panel-primary">
 
@@ -37,9 +36,10 @@
               </div>
             </div>
           </div>
+
         </div>
         <div class="col-sm-7">
-          <div class="panel panel-default panel-primary">
+          <div class="panel panel-default panel-group panel-primary">
     				<div class="panel-heading panel-primary">
     					Gruppo:
     					<label id="label_group_name" class="label_group_name" data-grouppath="0"  data-id="0">ZZZZZZZZZZZZZZ</label>
@@ -58,7 +58,7 @@
     				  </div>
             </div>
             -->
-    				<div class="panel-body panel-group">
+    				<div class="panel-body ">
     				  <table id="contacts_table" class="table table-hover table-condensed">
     					<thead>
     						<tr>
@@ -73,34 +73,34 @@
     					  
     					</tbody>
     				  </table>
-    				  <button type="button" class="btn btn-default saveGroups" >saveGroups</button>
-    				</div>
-            <div class="panel-body panel-contact">
-              <form class="form-horizontal">
-                <div class="form-group">
-                  <label for="contactName" class="col-sm-2 control-label">Contact Name</label>
-                  <div class="col-sm-10">
-                    <input type="text" class="form-control" id="contactName" placeholder="Contact Name" readonly data-id="">
-                  </div>
-                </div>
-                <div class="form-group contact_template">
-                  <label class="col-sm-2 control-label">Email</label>
-                  <div class="col-sm-10">
-                    <input type="email" class="form-control email"  placeholder="email">
-                  </div>
-                </div>
-                <button type="button" class="btn btn-default saveContact" >saveContact</button>
-              </form>
-              
+    				  
             </div>
-			    </div>
-        </div>
+            <div class="panel-heading panel-primary">
+              <button type="button" class="btn btn-default saveGroups" >saveGroups</button>
+            </div>
+            
+    			</div>
+        <form class="form-horizontal">
+          <div class="panel panel-default panel-contact panel-primary">
+            <div class="panel-heading panel-primary">
+              Contact Name:
+              <input type="text" class="form-control" id="contactName" placeholder="Contact Name" readonly data-id="">
+            </div>
+            <div class="panel-body panel-contact-body">
+              <div class="form-group contact_template">
+                <label class="col-sm-2 control-label">Email</label>
+                <div class="col-sm-10">
+                  <input type="email" class="form-control email"  placeholder="email">
+                </div>
+              </div>
+            </div>
+            <div class="panel-heading panel-primary">
+             <button type="button" class="btn btn-default saveContact" >Save Contact</button>
+             <button type="button" class="btn btn-danger cancelSave" >Cancel</button>
+            </div> 
+          </div>
+        </form>
       </div>
-      
-      
-
-
-
 
 <script type="text/javascript" src="js/jquery-2.1.4.min.js"></script>
 <script type="text/javascript" src="js/jquery.jeditable.js"></script>
@@ -125,6 +125,7 @@
 
    
     <script src="./zimbraClient.js"></script>
+    <script src="./addressbooks.js"></script>
 
 
   </body>
