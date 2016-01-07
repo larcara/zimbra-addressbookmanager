@@ -1,0 +1,51 @@
+{
+  "name": "Zimbra AddressBook Manager",
+  "manifest_version": 2,
+  "version": "1.0",
+  "description": "Zimbra AddressBook Manager",
+  "browser_action": {
+    "default_icon": "icon.png",
+    "default_title": "Zimbra AddressBook Manager"
+  },
+  "options_page": "options1.html",
+  "permissions": [
+    "storage", 
+    "cookies",
+    "http://*/*",
+    "https://*/*"
+  ],
+  "web_accessible_resources": ["addressbooks.html",
+  								"js/bootstrap.min",
+  								"js/jquery-2.1.4.min.js", 
+  								"js/jquery.jeditable.js",
+  								"js/jszip.min.js",
+								"css/bootstrap.min.css",
+								"css/dataTables.bootstrap.min.css",
+								"css/autoFill.bootstrap.min.css",
+								"css/buttons.bootstrap.min.css",
+								"css/fixedColumns.bootstrap.min.css",
+								"css/fixedHeader.bootstrap.min.css",
+								"css/select.bootstrap.min.css",
+								"js/bootstrap.min.js",
+								"js/jszip.min.js",
+								"js/pdfmake.min.js",
+								"js/vfs_fonts.js",
+								"js/jquery.dataTables.min.js",
+								"js/dataTables.bootstrap.min.js",
+								"js/dataTables.autoFill.min.js",
+								"js/autoFill.bootstrap.min.js",
+								"js/dataTables.buttons.min.js",
+								"js/buttons.bootstrap.min.js",
+								"js/buttons.colVis.min.js",
+								"js/buttons.flash.min.js",
+								"js/buttons.html5.min.js",
+								"js/buttons.print.min.js",
+								"js/dataTables.fixedColumns.min.js",
+								"js/dataTables.fixedHeader.min.js",
+								"js/dataTables.select.min.js"
+  								],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
+  }
+}
