@@ -42,7 +42,18 @@
 								"js/buttons.print.min.js",
 								"js/dataTables.fixedColumns.min.js",
 								"js/dataTables.fixedHeader.min.js",
-								"js/dataTables.select.min.js"
+								"js/dataTables.select.min.js",
+								"images/sort_asc.png",
+								"images/sort_asc_disabled.png",
+								"images/sort_both.png",
+								"images/sort_desc.png",
+								"images/sort_desc_disabled.png"
+								"fonts/glyphicons-halflings-regular.eot",
+								"fonts/glyphicons-halflings-regular.svg",
+								"fonts/glyphicons-halflings-regular.ttf",
+								"fonts/glyphicons-halflings-regular.woff",
+								"fonts/glyphicons-halflings-regular.woff2",
+								"swf/flashExport.swf"
   								],
   "background": {
     "scripts": ["background.js"],
