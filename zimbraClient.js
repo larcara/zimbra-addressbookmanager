@@ -6,8 +6,6 @@ filter group based on contact name
 filter group based on contact email
 when update contact email show group and ask for update
 show address book of delegated account 
-hide group panel on start
-delete row
 */
 
 var authToken;

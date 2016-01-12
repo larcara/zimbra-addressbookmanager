@@ -2,15 +2,41 @@
         server: "",
       }, function(items) {
         zimbraClient.hostName  = items.server;
-        chrome.cookies.get({url: items.server, name:"ZM_AUTH_TOKEN"}, function(cookie){zimbraClient.authToken=cookie.value});
-    
-      });
+        chrome.cookies.get({url: items.server, name:"ZM_AUTH_TOKEN"},
+                             function(cookie){
+                                zimbraClient.authToken=cookie.value;
+                                zimbraClient.getAuth()
+                                zimbraClient.getAddressBooks();
+                                popolateAddressBooks();
+                                });
+                          });
 
 $(document).ready(function() {
+    $("#reload_groups").click(function(){
+        zimbraClient.getAddressBooks();
+        popolateAddressBooks();
+      });
+      
+    $(".saveGroups").click(function(){
+        var table=$('#contacts_table').DataTable();
+        var new_dlist=$.map(table.data(),function(value){return value["contact"] + " <" + value["email"] + ">"});
+        zimbraClient.saveGroups($("#label_group_name").data("id"),new_dlist);
+        alert("completed");
+    }); 
+    $(".saveContact").click(function(){
+        contact_id=$("#contactName").data("id");
+        form_emails=$(".email.active").map(function(){return $(this).val()});
+        zimbraClient.saveContact(contact_id,form_emails);
+        alert("completed");
+    }); 
+
+    $(".cancelSave").click(function(){
+      $(".panel-contact").hide();
+      //TODO Clear Id 
+      $(".panel-group").show();
+    });
 
 
-    $(".contact_template").hide();
-    $(".panel-contact").hide();
     contacts_table = $('#contacts_table').DataTable({
       //select: true,
       columns: [
@@ -50,39 +76,17 @@ $(document).ready(function() {
              $(".deleteRow").click(function(){deleteRow($(this))});
         } 
 
-  });
+    });
 
-  contacts_table.buttons().container().appendTo( $('.col-sm-6:eq(0)', contacts_table.table().container() ) );
-  
-  //zimbraClient.getAuth()
-  //    zimbraClient.getAddressBooks();
-  //    popolateAddressBooks()
+    contacts_table.buttons().container().appendTo( $('.col-sm-6:eq(0)', contacts_table.table().container() ) );
+    
+    
+    //   
+    $(".contact_template").hide();
+    $(".panel-contact").hide();
+    $(".panel-group").hide();    
+    $(".search_box").show();
 
-  $(".search_box").show();
-  $(".panel-contact").hide();
-  $(".panel-group").hide();
-  
-  $("#reload_groups").click(function(){
-        zimbraClient.getAddressBooks();
-        popolateAddressBooks();
-      });
-      
-    $(".saveGroups").click(function(){
-        var table=$('#contacts_table').DataTable();
-        var new_dlist=$.map(table.data(),function(value){return value["contact"] + " <" + value["email"] + ">"});
-        zimbraClient.saveGroups($("#label_group_name").data("id"),new_dlist);
-        alert("completed");
-    }); 
-    $(".saveContact").click(function(){
-        contact_id=$("#contactName").data("id");
-        form_emails=$(".email.active").map(function(){return $(this).val()});
-        zimbraClient.saveContact(contact_id,form_emails);
-        alert("completed");
-    }); 
-
-    $(".cancelSave").click(function(){
-      $(".panel-contact").hide();
-      //TODO Clear Id 
-      $(".panel-group").show();
-    }); 
+        
+   
 }); 
