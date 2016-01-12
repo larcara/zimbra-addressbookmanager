@@ -44,20 +44,6 @@
     					Gruppo:
     					<label id="label_group_name" class="label_group_name" data-grouppath="0"  data-id="0">ZZZZZZZZZZZZZZ</label>
     				</div>
-				
-    				<!--
-            <div class="panel-body">
-    				  
-              <div class="form-horizontal form-group">
-      					<div class="col-sm-7">
-      					  <input type="search" class="form-control" id="add_account_to_group" placeholder="add contact by autocomplete or emails(s)">
-      					</div>
-      					<div class="col-sm-1">  
-      					  <a class="btn btn-primary btn-sm ">Add</a>
-      					</div>
-    				  </div>
-            </div>
-            -->
     				<div class="panel-body ">
     				  <table id="contacts_table" class="table table-hover table-condensed">
     					<thead>
@@ -80,26 +66,33 @@
             </div>
             
     			</div>
-        <form class="form-horizontal">
+        
           <div class="panel panel-default panel-contact panel-primary">
             <div class="panel-heading panel-primary">
               Contact Name:
               <input type="text" class="form-control" id="contactName" placeholder="Contact Name" readonly data-id="">
             </div>
             <div class="panel-body panel-contact-body">
-              <div class="form-group contact_template">
-                <label class="col-sm-2 control-label">Email</label>
-                <div class="col-sm-10">
-                  <input type="email" class="form-control email"  placeholder="email">
+              
+              
+                <div class="form-group contact_template">
+                  <div class="col-sm-10">
+                  <form class="form-inline">         
+                    <label class="col-sm-2 control-label">Email</label>
+                    <input type="email" class="form-control col-sm-8 email"  placeholder="email" data-id="contact_id">
+                    <button type="button" class="btn btn-default saveContact" data-email="">Save Contact</button>
+                    <li class="groups">
+                    
+                    </li>
+                  </form>
+                  </div>
                 </div>
-              </div>
             </div>
             <div class="panel-heading panel-primary">
-             <button type="button" class="btn btn-default saveContact" >Save Contact</button>
-             <button type="button" class="btn btn-danger cancelSave" >Cancel</button>
+              <button type="button" class="btn btn-danger cancelSave" >Cancel</button>
             </div> 
           </div>
-        </form>
+        
       </div>
 
 <script type="text/javascript" src="js/jquery-2.1.4.min.js"></script>
