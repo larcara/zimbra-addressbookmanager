@@ -1,8 +1,0 @@
-<zimlet name="com_zimbra_nab" version="1.0" description="Zimbra Address Book Manager">
-     <contentObject>
-         <matchOn>
-             <regex attrs="ig"> user|person</regex> <!-- matches on the words user or person -->
-         </matchOn>
-         <toolTip>Hello World!</toolTip>
-     </contentObject>
- </zimlet>
