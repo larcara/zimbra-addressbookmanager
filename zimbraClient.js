@@ -60,11 +60,12 @@ function walk_folder(obj){
 var zimbraClient= {
 	authToken: "",
  	hostName: "",
-	currentGroup: "",
-	currentGroupJson: function(){return groupToJson(this.currentGroup)},
+	//currentGroup: "",
+	//currentGroupJson: function(){return groupToJson(this.currentGroup)},
 	addressBooks:[],
 	email_dictionary: {},
 	user_contacts: {},
+	groups: {},
 	isConnected: function() {return !this.authToken=="";},
 	user:"",
 	password:"",
@@ -103,11 +104,12 @@ var zimbraClient= {
 		else
 			{this.absFolderPath=obj};
 
-		this.get_json=function(){
+		this.get_json=function(offset,limit){
 			var address_book = this;
 			var header='"Header":{"context":{"_jsns":"urn:zimbra","authToken":"'+ zimbraClient.authToken +'"}}';
-        	var body='"Body":{"SearchRequest":{"_jsns":"urn:zimbraMail","offset":0,"limit":100,"query":"in:\\"'+ address_book.absFolderPath.substring(1) +'\\"","types":"contact","fetch":1}}'
-        	
+        	var body='"Body":{"SearchRequest":{"_jsns":"urn:zimbraMail","offset":' + offset +',"limit":' + limit +',"query":"in:\\"'+ address_book.absFolderPath.substring(1) +'\\"","types":"contact","fetch":1}}'
+        	//console.log("starting downloading " + body);
+
 		    var response = $.post(zimbraClient.hostName +  "/service/soap/SearchRequest", "{" + header + "," + body + "}", function(data,status,context){
 		    		if (context.readyState== 4 && context.status==200){
 		    			address_book.json_data=data;
@@ -115,40 +117,68 @@ var zimbraClient= {
 		    	}, "json");
 		};
 		this.popolate=function(){
-		   this.get_json();
-		   var data =  this.json_data;
-		   var addressBook = this;
-		   if (! ("cn" in data.Body.SearchResponse) )
-		   	{return}
+		   this.json_data=null;
+		   var offset=0
+		   this.get_json(offset,offset+1000);
+		   while (this.json_data!=null)
+		   {
 
-		   $.each( data.Body.SearchResponse.cn, function( index,obj ) 
-	   		{
-		   		if ('dlist' in obj._attrs) 
-		   			{addressBook.groups.push(obj)}
-		   		else
-		   		 {
-		   		 	email=obj._attrs.email;
-		   		 	zimbraClient.user_contacts[obj.id.toString()]=obj;
-		   		 	zimbraClient.user_contacts[obj.id.toString()].owner=addressBook.owner;
-		   		 	zimbraClient.email_dictionary[email]=obj.id;
-		   		 	zimbraClient.user_contacts[obj.id.toString()]["emails"]=[email];
-		   		 	var counter=2;
-		   		 	while (email!=null)
-		   		 	{
-						if ('email'+counter in obj._attrs)
-							{
-								email=obj._attrs["email"+counter];
-								zimbraClient.email_dictionary[email]=obj.id;
-								zimbraClient.user_contacts[obj.id.toString()]["emails"].push(email);
-								counter++
-							}
-							else
-							break
+			   var data =  this.json_data;
+			   var addressBook = this;
+			   if (! ("cn" in data.Body.SearchResponse) )
+			   	{break}
 
-		   		 	}
-		   		 	addressBook.contacts.push(obj)
-		   		 }
-	   		});
+			   $.each( data.Body.SearchResponse.cn, function( index,obj ) 
+		   		{
+			   		if ('dlist' in obj._attrs) 
+			   			{
+			   				//obj.json_dlist=groupToJson(obj._attrs.dlist);
+			   				addressBook.groups.push(obj);
+			   			}
+			   		else
+			   		 {
+			   		 	email=obj._attrs.email;
+			   		 	zimbraClient.user_contacts[obj.id.toString()]=obj;
+			   		 	zimbraClient.user_contacts[obj.id.toString()].owner=addressBook.owner;
+			   		 	zimbraClient.email_dictionary[email]=obj.id;
+			   		 	zimbraClient.user_contacts[obj.id.toString()]["emails"]=[email];
+			   		 	zimbraClient.user_contacts[obj.id.toString()]["groups"]=[];
+			   		 	var counter=2;
+			   		 	while (email!=null)
+			   		 	{
+							if ('email'+counter in obj._attrs)
+								{
+									email=obj._attrs["email"+counter];
+									zimbraClient.email_dictionary[email]=obj.id;
+									zimbraClient.user_contacts[obj.id.toString()]["emails"].push(email);
+									counter++
+								}
+								else
+								break
+
+			   		 	}
+			   		 	addressBook.contacts.push(obj)
+			   		 }
+		   		});
+				this.json_data=null;
+				offset = offset + 1000;
+ 				this.get_json(offset,offset+100);
+			};
+
+		   $.each(addressBook.groups, function(index,obj){
+		   		
+		   		emails=groupToJson(obj._attrs.dlist);
+		   		
+		   		obj.dlist_json=emails;
+		   		zimbraClient.groups[obj.id]=obj;
+		   		$.each(emails, function(index,contact){
+		   			if (contact.contact_id != "" && zimbraClient.user_contacts[contact.contact_id])
+		   			{
+		   				zimbraClient.user_contacts[contact.contact_id].groups.push(obj)	
+		   			}
+		   		}); 
+		   });
+
 		}
 	},
 
@@ -156,7 +186,12 @@ var zimbraClient= {
       var header='{"Header":{"context":{"_jsns":"urn:zimbra","authToken":"'+ this.authToken +'"}}';
       var body='"Body":{"GetFolderRequest":{"_jsns":"urn:zimbraMail","visible":"0"}}}';
       $.post(this.hostName + "/service/soap/GetFolderRequest", header + "," + body, address_book_to_obj, "json");
-   	  
+   	  $.each( zimbraClient.addressBooks, function(index, obj ) {
+   	  	//console.log("starting elaborate ");
+   	  	//console.log(obj);
+		obj.popolate();
+	  });
+
 	},
 	
 	saveGroups: function(id,members){
@@ -166,7 +201,7 @@ var zimbraClient= {
 		data= data  + '","a":[{"n":"dlist","_content":"' + members;  
 		data= data+ '"}]}}}}'
         var response = $.post(this.hostName + "/service/soap/ModifyContactRequest",data);
-        console.log(response);
+        
         zimbraClient.getAddressBooks();
         popolateAddressBooks();
 
@@ -204,26 +239,33 @@ function address_book_to_obj(address_book){
 		obj.view=="contact" ? zimbraClient.addressBooks.push(new zimbraClient.addressBook(obj)) : null;
 	});
 	
-	$.each( zimbraClient.addressBooks, function(index, obj ) {
-		obj.popolate();
-	});
+	
 }
 
 
 
-function groupToJson(dlist){
-		dlist=dlist.replace(/"/, "");
+function groupToJson(_dlist, debug){
+		var dlist=_dlist.replace(/"/g, "");
 		var emails=[]
 		match=REGEXP_EMAILS.exec(dlist);
 		var counter = 0
 
 		while (match != null) {
+			if (debug)
+			  {console.log(match)}
 			contact=REGEXP_EMAIL.exec(match[0]);
 			email={"DT_RowId": "contact_row_" + counter++, "contact_id" : zimbraClient.isContact(contact[2]) +"", "contact" : contact[1] || "", "email" : contact[2], "original" : contact[0], "link":"0" };
 			emails.push(email);
-    	    match = REGEXP_EMAILS.exec(zimbraClient.currentGroup);
+    	    match = REGEXP_EMAILS.exec(dlist);
 		}
 		return emails
+		
+		
+}
+
+function jsonToGroup(_dlist, debug){
+		var new_dlist=$.map(_dlist,function(value){return value["contact"] + " <" + value["email"] + ">"});
+		return new_dlist.join(",")
 		
 		
 }

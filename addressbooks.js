@@ -120,11 +120,12 @@ function generateLIForGroup(group){
     li.click(function(){
         $(".panel-group").show();
         $(".panel-contact").hide();
-      zimbraClient.currentGroup=$(this).data("dlist");
+        group=zimbraClient.groups[$(this).data("id")]
+        //zimbraClient.currentGroup=$(this).data("dlist");
 
         var table=$('#contacts_table').DataTable();
         table.clear();
-        table.rows.add(zimbraClient.currentGroupJson()).draw();
+        table.rows.add(group.dlist_json).draw();
 
         var group_label=$("#label_group_name")
         group_label.data("id", $(this).data("id"));
@@ -192,14 +193,13 @@ function editContact(id){
   contact_panel.show();
   $(".panel-group").hide();
   var contact= zimbraClient.user_contacts[id];
-  console.log(contact);
   $("#contactName").val(contact.fileAsStr);
   $("#contactName").data("id", id);
   $("#contactName").data("owner", contact.owner);
   email=contact._attrs.email;
   new_line=$(".contact_template").clone()
   new_line=new_line.removeClass("contact_template").addClass("new_email_line");
-  new_line.find(".email").prop({ id: "email", name: "email"}).addClass("active").val(email);
+  new_line.find(".email").prop({ id: "email", name: "email"}).data("email",email).addClass("active").val(email);
   new_line.find(".saveContact").click(function(){saveContact(this)});
 
   $(".panel-contact.panel-primary").addClass("success");
@@ -215,7 +215,7 @@ function editContact(id){
               email=contact._attrs["email"+counter];
               new_line=$(".contact_template").clone()
               new_line=new_line.removeClass("contact_template").addClass("new_email_line");
-              new_line.find(".email").prop({ id: "email"+counter, name: "email"+counter}).addClass("active").val(email);
+              new_line.find(".email").prop({ id: "email"+counter, name: "email"+counter }).data("email",email).addClass("active").val(email);
               new_line.find(".saveContact").click(function(){saveContact(this)});
               
 
@@ -223,16 +223,29 @@ function editContact(id){
               counter++
             }
     };
-  
+    $.each(contact.groups, function(index,group){
+         new_line.find(".groups").append("<li class='list-group-item' data-id='"+ group.id +"'>" + group.fileAsStr +"</li>");
+    });
   $(".new_email_line").show();
 }
 function saveContact(btn){
         contact_id=$("#contactName").data("id");
+        var contact= zimbraClient.user_contacts[contact_id];
+        var emailOldValue = $(btn).prev().data("email");
         var emailField = $(btn).prev().prop("id");
         var emailValue = $(btn).prev().val();
-        console.log(emailField);
-        console.log(emailValue);
+        //console.log(emailField);
+        //console.log(emailValue);
+        //console.log(emailOldValue);
         form_emails=$(".email.active").map(function(){return $(this).val()});
+       
+        $.each(contact.groups, function(index,group){
+            //console.log(group.id)
+            //console.log(group._attrs.dlist)
+            //console.log(group._attrs.dlist.replace(emailOldValue,emailValue));
+            var new_dlist = jsonToGroup(group.dlist_json).replace(emailOldValue,emailValue);
+            zimbraClient.saveGroups(group.id,new_dlist);
+        });
         zimbraClient.saveContact(contact_id,emailField,emailValue);
         alert("completed");
     } 
