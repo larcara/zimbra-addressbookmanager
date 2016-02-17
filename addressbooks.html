@@ -13,6 +13,7 @@
   <link rel="stylesheet" type="text/css" href="css/fixedColumns.bootstrap.min.css"/>
   <link rel="stylesheet" type="text/css" href="css/fixedHeader.bootstrap.min.css"/>
   <link rel="stylesheet" type="text/css" href="css/select.bootstrap.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../addressbooks.css"/>
  
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -27,7 +28,7 @@
 
             <div class="panel-heading panel-primary">Elenco Rubriche <span id="reload_groups" class="glyphicon glyphicon-refresh" aria-hidden="true"></span></div>
             <div class="panel-body">
-              <input type="search" class="form-control" id="search" placeholder="search">
+              <input type="search" class="form-control" id="group_search" placeholder="search">
               <div style="overflow-y: scroll; overflow-x: hidden; height: 500px;">
                 <ul class="list-group address_books_ul">
                   <li class="list-group-item">AddressBook1</li>
@@ -69,28 +70,29 @@
         
           <div class="panel panel-default panel-contact panel-primary">
             <div class="panel-heading panel-primary">
-              Contact Name:
-              <input type="text" class="form-control" id="contactName" placeholder="Contact Name" readonly data-id="">
+              Contact FirstName:
+              <input type="text" class="form-control" id="contactFirstName" placeholder="Contact Name" data-id="">
+              Contact LastName:
+              <input type="text" class="form-control" id="contactLastName" placeholder="Contact Name" data-id="">
             </div>
             <div class="panel-body panel-contact-body">
               
               
                 <div class="form-group contact_template">
-                  <div class="col-sm-10">
+                  
                   <form class="form-inline">
-                    <div class="col-sm-12">
+                    <div class="row">
                       <label class="col-sm-4 control-label">Email</label>
                       <input type="email" class="form-control col-sm-8 email"  placeholder="email" data-id="contact_id">
-                      <button type="button" class="btn btn-default saveContact" data-email="">Save Contact</button>
+                      <button type="button" class="btn btn-default saveContact" data-email="">Update Groups and Contact</button>
                     </div>
-                    <div class="col-sm-12">
-                      <label class="col-sm-4 control-label"> Gruppi in cui è usata la mail:</label>
-                      <ul class="list-group col-sm-8 groups">
-                      
-                      </ul>
+
+                    <div class="row">
+                      <div class="col-sm-4"></div>
+                      <div class="col-sm-8 groups_labels"></div>
                     </div>
                   </form>
-                  </div>
+                  
                 </div>
             </div>
             <div class="panel-heading panel-primary">

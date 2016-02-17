@@ -50,11 +50,27 @@ _.escape = function(string) {
 };
 
 
-function walk_folder(obj){
+function walk_folder(obj, debug){
+	var return_obj=null;
+	if (debug==true)
+		{
+		// console.log("starting walk on:");
+		// console.log(obj);
+		}
 	if (typeof obj.folder =='object' )
-		{return [obj, walk_folder(obj.folder[0])]}
+		{
+			return_obj = [obj];
+			$.each(obj.folder,function(counter,item){
+				//console.log(item);
+				//console.log(counter);
+				//console.log(return_obj);
+				return_obj.push(walk_folder(item));
+			})
+		//	return [obj, walk_folder(obj.folder[0])]
+		}
 	else
-		{return obj}
+		{return_obj = obj}
+	return return_obj
 }
 
 var zimbraClient= {
@@ -135,14 +151,17 @@ var zimbraClient= {
 			   				//obj.json_dlist=groupToJson(obj._attrs.dlist);
 			   				addressBook.groups.push(obj);
 			   			}
-			   		else
+			   		else if ('email' in obj._attrs) 
 			   		 {
-			   		 	email=obj._attrs.email;
+			   		 	email=obj._attrs.email.toLowerCase();
+
 			   		 	zimbraClient.user_contacts[obj.id.toString()]=obj;
 			   		 	zimbraClient.user_contacts[obj.id.toString()].owner=addressBook.owner;
+			   		 	if (email in zimbraClient.email_dictionary)
+			   		 	  {console.log("[" + addressBook.absFolderPath + "] " + email + " è duplicato");}
 			   		 	zimbraClient.email_dictionary[email]=obj.id;
 			   		 	zimbraClient.user_contacts[obj.id.toString()]["emails"]=[email];
-			   		 	zimbraClient.user_contacts[obj.id.toString()]["groups"]=[];
+			   		 	zimbraClient.user_contacts[obj.id.toString()]["groups"]={};
 			   		 	var counter=2;
 			   		 	while (email!=null)
 			   		 	{
@@ -159,25 +178,31 @@ var zimbraClient= {
 			   		 	}
 			   		 	addressBook.contacts.push(obj)
 			   		 }
+			   		 else
+			   		 {
+			   		 	//console.log("ERRORE")
+			   		 	//console.log(obj)
+			   		 }
 		   		});
 				this.json_data=null;
 				offset = offset + 1000;
  				this.get_json(offset,offset+100);
 			};
-
-		   $.each(addressBook.groups, function(index,obj){
-		   		
-		   		emails=groupToJson(obj._attrs.dlist);
-		   		
-		   		obj.dlist_json=emails;
-		   		zimbraClient.groups[obj.id]=obj;
-		   		$.each(emails, function(index,contact){
-		   			if (contact.contact_id != "" && zimbraClient.user_contacts[contact.contact_id])
-		   			{
-		   				zimbraClient.user_contacts[contact.contact_id].groups.push(obj)	
-		   			}
-		   		}); 
-		   });
+			if (addressBook ) {
+			   $.each(addressBook.groups, function(index,obj){
+			   		emails=groupToJson(obj._attrs.dlist);
+			   		obj.dlist_json=emails;
+			   		zimbraClient.groups[obj.id]=obj;
+			   		$.each(emails, function(index,contact){
+			   			if (contact.contact_id != "" && zimbraClient.user_contacts[contact.contact_id])
+			   			{
+			   				if (zimbraClient.user_contacts[contact.contact_id].groups[contact.email] == undefined)
+			   					{zimbraClient.user_contacts[contact.contact_id].groups[contact.email]=[]}
+			   				zimbraClient.user_contacts[contact.contact_id].groups[contact.email].push(obj)	
+			   			}
+			   		}); 
+			   });
+		   }
 
 		}
 	},
@@ -185,7 +210,11 @@ var zimbraClient= {
 	getAddressBooks:function(){
       var header='{"Header":{"context":{"_jsns":"urn:zimbra","authToken":"'+ this.authToken +'"}}';
       var body='"Body":{"GetFolderRequest":{"_jsns":"urn:zimbraMail","visible":"0"}}}';
+      zimbraClient.addressBooks = [];
       $.post(this.hostName + "/service/soap/GetFolderRequest", header + "," + body, address_book_to_obj, "json");
+
+
+
    	  $.each( zimbraClient.addressBooks, function(index, obj ) {
    	  	//console.log("starting elaborate ");
    	  	//console.log(obj);
@@ -222,21 +251,51 @@ var zimbraClient= {
 
 
 
-function address_book_to_obj(address_book){
-	var local_folders 	  = $.map(address_book.Body.GetFolderResponse.folder[0].folder, function(n){return walk_folder(n);});
-	var delegated_folders = address_book.Body.GetFolderResponse.folder[0].link && $.map(address_book.Body.GetFolderResponse.folder[0].link, function(n){return walk_folder(n);});
+function address_book_to_obj(address_book, debug){
+	
+	var local_folders = address_book.Body.GetFolderResponse.folder ? $.map(address_book.Body.GetFolderResponse.folder[0].folder, function(n){return walk_folder(n);}) : [];
+	var remote_mount_point;
+	var delegated_folders;
+
+	if (address_book.Body.GetFolderResponse.link)
+		{
+		 remote_mount_point= address_book.Body.GetFolderResponse.link;
+		 delegated_folders = remote_mount_point && $.map(remote_mount_point[0].folder, function(n){return walk_folder(n,true);})
+		}
+		else
+		{
+		 remote_mount_point= address_book.Body.GetFolderResponse.folder[0].link;
+		 delegated_folders = remote_mount_point && $.map(remote_mount_point, function(n){return walk_folder(n,true);});
+	 	}
 
 	
-	
 
-	zimbraClient.addressBooks = [];
+	if (debug==true)
+	{
+		console.log(address_book);
+		console.log(local_folders);
+		console.log(delegated_folders);
+	}
+
+	//zimbraClient.addressBooks = [];
 	$.each( local_folders, function(index, obj ) {
 		obj.view=="contact" ? zimbraClient.addressBooks.push(new zimbraClient.addressBook(obj)) : null;
-
 	});
 
 	$.each( delegated_folders, function(index, obj ) {
 		obj.view=="contact" ? zimbraClient.addressBooks.push(new zimbraClient.addressBook(obj)) : null;
+		if (obj.rid=="1")
+			{
+				//console.log ("Starting traverse");
+				//console.log (obj);
+			var header='{"Header":{"context":{"_jsns":"urn:zimbra","authToken":"'+ zimbraClient.authToken +'"}}';
+      		var body='"Body":{"GetFolderRequest":{"_jsns":"urn:zimbraMail","visible":"0", "folder":{"path":"' + obj.absFolderPath +  '"}}}}';
+      		//var body='"Body":{"GetFolderRequest":{"_jsns":"urn:zimbraMail","visible":"0", "folder":{"path":"/Zfunz-Sistemisti Posta"}}}}';
+      		$.post(zimbraClient.hostName + "/service/soap/GetFolderRequest", header + "," + body, function(data){address_book_to_obj(data,false)}, "json");
+
+			}
+			
+
 	});
 	
 	
