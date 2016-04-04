@@ -27,6 +27,9 @@
                           });
 
 $(document).ready(function() {
+   
+
+
     $("#reload_groups").click(function(){
         zimbraClient.getAddressBooks();
         popolateAddressBooks();
@@ -37,6 +40,18 @@ $(document).ready(function() {
         var new_dlist=$.map(table.data(),function(value){return value["contact"] + " <" + value["email"] + ">"});
         zimbraClient.saveGroups($("#label_group_name").data("id"),new_dlist);
         alert("completed");
+        $("#reload_groups").click();
+    }); 
+
+    $(".deleteGroup").click(function(){
+      var r = confirm("Are you sure??");
+      if (r == true) {
+          zimbraClient.moveItemToTrash($("#label_group_name").data("id"));
+        } else {
+          console.log("cancelled");
+          $("#reload_groups").click();
+        }
+
     }); 
 
 
@@ -62,7 +77,7 @@ $(document).ready(function() {
             $(nTd).html("<span class='glyphicon glyphicon-trash deleteRow' aria-hidden='true'></span>");
            }}  
         ],
-        buttons: ['excel',
+        buttons: [{extend: 'excel',exportOptions: {columns: [1, 2]}},
                   'print',
                   { text: 'Add new',
                       action: function ( e, dt, node, config ) {
@@ -122,6 +137,7 @@ function filterGroups(search_field){
     }
 
 function generateUlForAddressBook(address_book){
+  var new_group_btn=$('<button/>', {'class':' pull-right btn btn-success btn-xs new_group_btn',  'text': 'New Group' });
   var li=$('<li/>', 
         { 'id': 'address_book_li_' + address_book.id, 
           //'class':' list-group-item ',
@@ -130,7 +146,7 @@ function generateUlForAddressBook(address_book){
           'data-folderpath': address_book.absFolderPath
         }
         ).append($('<label/>', {'class':' tree-toggler nav-header',  'text': 'Rubrica ' + address_book.name})
-        ).append($('<ul/>', {'class':'nav nav-list tree list-unstyled', 'id': 'address_book_ul_' + address_book.id})
+        ).append(new_group_btn).append($('<ul/>', {'class':'nav nav-list tree list-unstyled', 'id': 'address_book_ul_' + address_book.id})
         );
 
         if (typeof address_book.owner == "string")
@@ -140,7 +156,16 @@ function generateUlForAddressBook(address_book){
            }
           else
            {li.addClass("list-group-item-success");}
+   
+   new_group_btn.click(function(){
+        var group_name=prompt("Insert group name","new group");
+        if (group_name != null) {
+          var li=$(this).parent();
+          zimbraClient.createGroup(li.data("id"),group_name);
+        }
 
+        
+    });
   return li;
 }
 
@@ -152,8 +177,8 @@ function generateLIForGroup(group){
       'data-id':group.id ,
       'data-groupname': group.fileAsStr, 
       'data-dlist':group._attrs.dlist}
-    ).append($('<a/>', {'href':'#', 'text': group.fileAsStr})
-    ).append($('<span/>', {'class':'label label-info label-group', 'text': group.dlist_json.length}));
+    ).append($('<a/>', {'href':'#',  'alt': 'members: ','text': group.fileAsStr, 'title': 'members: ' + group.dlist_json.length.toString() })
+    ).append($('<span/>', {'class':'label label-info label-group num_of_contacts_badge', 'title': 'members: ' + group.dlist_json.length.toString() , 'text': group.dlist_json.length}));
 
     li.click(function(){
         //$(this).effect("highlight", {}, 1500)
@@ -173,11 +198,11 @@ function generateLIForGroup(group){
         //makeTableEditable()
         
     })
-
+ 
   return li;
 };
 
-    
+
 
 function makeTableEditable(){
  $('#contacts_table tr.editable td.editable').editable(function(value, settings) {

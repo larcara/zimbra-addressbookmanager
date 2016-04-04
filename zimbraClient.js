@@ -212,12 +212,7 @@ var zimbraClient= {
       var body='"Body":{"GetFolderRequest":{"_jsns":"urn:zimbraMail","visible":"0"}}}';
       zimbraClient.addressBooks = [];
       $.post(this.hostName + "/service/soap/GetFolderRequest", header + "," + body, address_book_to_obj, "json");
-
-
-
    	  $.each( zimbraClient.addressBooks, function(index, obj ) {
-   	  	//console.log("starting elaborate ");
-   	  	//console.log(obj);
 		obj.popolate();
 	  });
 
@@ -245,7 +240,36 @@ var zimbraClient= {
 		$.post(this.hostName + "/service/soap/ModifyContactRequest",data);
 		zimbraClient.getAddressBooks()
 		popolateAddressBooks()
-	}
+	},
+	createGroup: function(address_book_id,group_name){
+		
+		cmd = '"cn":{"l":"#address_book_id","a":[{"n":"fileAs","_content":"8:#GROUP_NAME"},{"n":"nickname","_content":"#GROUP_NAME"},{"n":"dlist","_content":"#GROUP_NAME"},{"n":"type","_content":"group"}]}';
+
+		cmd =cmd.replace("#GROUP_NAME", group_name).replace("#GROUP_NAME", group_name).replace("#GROUP_NAME", group_name).replace("#address_book_id", address_book_id)
+		var data='{';
+		data= data + '"Header":{"context":{"_jsns":"urn:zimbra","authToken":"'+ this.authToken +'"}},';
+		data= data + '"Body":{"CreateContactRequest":{"_jsns":"urn:zimbraMail", ' + cmd  + '}}}'
+		$.post(this.hostName + "/service/soap/CreateContactRequest",data);
+		zimbraClient.getAddressBooks()
+		popolateAddressBooks()	
+	},
+	moveItemToTrash: function(itemId){
+		
+		cmd = '"action":{"op":"move","1":"3","id":"#itemId"}';
+		cmd = '"action":{"op": { "_content": "delete"  },"id": { "_content": "#itemId" } }';
+
+		cmd = cmd.replace("#itemId", itemId);
+
+		var data='{';
+		data= data + '"Header":{"context":{"_jsns":"urn:zimbra","authToken":"'+ this.authToken +'"}, "format":{"type":"js"}},';
+		data= data + '"Body":{"ContactActionRequest":{"_jsns":"urn:zimbraMail", ' + cmd  + '}}}'
+		//console.log(data);
+		var response = $.post(this.hostName + "/service/soap/ContactActionRequest",data);
+		//return response;
+		zimbraClient.getAddressBooks()
+		popolateAddressBooks()	
+	},
+	
 	
 }
 
