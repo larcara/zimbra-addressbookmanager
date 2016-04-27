@@ -1,7 +1,7 @@
 {
   "name": "Zimbra AddressBook Manager",
   "manifest_version": 2,
-  "version": "1.4",
+  "version": "1.8",
   "description": "Zimbra AddressBook Manager",
   "browser_action": {
     "default_icon": "abm_logo_48.png",

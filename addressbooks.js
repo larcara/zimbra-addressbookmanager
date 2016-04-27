@@ -5,8 +5,8 @@
 
       }, function(items) {
             zimbraClient.hostName  = items.server;
-//            zimbraClient.user=items.loginEmail;
-//            zimbraClient.password=items.loginPassword;
+        //zimbraClient.user=items.loginEmail;
+        //zimbraClient.password=items.loginPassword;
         //if (zimbraClient.user != "" && zimbraClient.password != "")
         //{
         //    
@@ -37,7 +37,13 @@ $(document).ready(function() {
       
     $(".saveGroups").click(function(){
         var table=$('#contacts_table').DataTable();
-        var new_dlist=$.map(table.data(),function(value){return value["contact"] + " <" + value["email"] + ">"});
+        var new_dlist=$.map(table.data(),function(value){
+          if (value["contact"]=="--")
+            {return value["email"] ;}
+          else
+            {return value["contact"] + " <" + value["email"] + ">";}
+          
+        });
         zimbraClient.saveGroups($("#label_group_name").data("id"),new_dlist);
         alert("completed");
         $("#reload_groups").click();
@@ -48,7 +54,7 @@ $(document).ready(function() {
       if (r == true) {
           zimbraClient.moveItemToTrash($("#label_group_name").data("id"));
         } else {
-          console.log("cancelled");
+          //console.log("cancelled");
           $("#reload_groups").click();
         }
 
@@ -78,7 +84,7 @@ $(document).ready(function() {
            }}  
         ],
         buttons: [{extend: 'excel',exportOptions: {columns: [1, 2]}},
-                  'print',
+                  {extend: 'print',exportOptions: {columns: [1, 2]}},
                   { text: 'Add new',
                       action: function ( e, dt, node, config ) {
                           dt.row.add( {"DT_RowId":null, "contact_id" : "", "contact" : "--", "email" : "--", "original" : "", "link":"0" } ).draw( false );
@@ -314,6 +320,8 @@ function saveContact(btn){
         var emailOldValue = $(btn).prev().data("email");
         var emailField = $(btn).prev().prop("id");
         var emailValue = $(btn).prev().val();
+        var firstName = $("#contactFirstName").val()
+        var lastName  = $("#contactLastName").val()
         //console.log(emailField);
         //console.log(emailValue);
         //console.log(emailOldValue);
@@ -327,14 +335,21 @@ function saveContact(btn){
               if (member["email"]==emailOldValue)
               {
                 member["email"] = emailValue;
-                member["contact"] = $("#contactFirstName").val() + " " + $("#contactLastName").val();
+                member["contact"] = firstName + " " + lastName;
               }
             }));
             var new_dlist = jsonToGroup(group.dlist_json);
             zimbraClient.saveGroups(group.id,new_dlist);
         });
 
+        //TODO - SALVARE ANCHE NOME E COGNOME
+        //[{n: "lastName", _content: "desks"},{n: "firstName", _content: "Adnkronosd"},{n: "fullName", _content: "Adnkronosd desks"}]
+        json_data=[]
+        json_data[0]={"n": emailField, "_content":emailValue};
+        json_data[1]={"n": "lastName", "_content": lastName};
+        json_data[2]={"n": "firstName", "_content": firstName};
+        json_data[3]={"n": "fullName", "_content": firstName + " " + lastName};
 
-        zimbraClient.saveContact(contact_id,emailField,emailValue);
+        zimbraClient.saveContact(contact_id,json_data);
         alert("completed");
     } 

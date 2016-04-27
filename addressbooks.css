@@ -4,6 +4,13 @@
 .num_of_contacts_badge {
 	margin-left: 10px;
 }
+.groups_labels {
+	    margin-top: 10px;
+}
+.groups_labels span {
+	    margin-left: 4px;
+}
+
 /*
 .li_group:hover {
     background-color: blue;
